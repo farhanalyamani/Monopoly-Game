@@ -29,21 +29,22 @@ function showFloatingText(amount) {
 
 // 👉 FUNGSI BUAT MILIH MENU DI LOBI
 function selectMode(mode) {
+    // Kalo milih online, jangan masuk game, tapi buka pop-up lobi
     if (mode === 'online') {
-        alert("Sabar blay! Mode Online (Mabar Room) masih dalam tahap pembangunan. Pilih mode AI atau Lokal dulu yak! 🛠️");
-        return; // Batalin masuk game
+        document.getElementById('onlineLobbyModal').style.display = 'flex';
+        return; 
     }
 
-    // Simpen mode yang dipilih
+    // Simpen mode yang dipilih (Lokal / AI)
     gameMode = mode;
     
-    // 👉 INI OBATNYA: Ngatur otak Player 2 sesuai mode yang dipilih
+    // Ngatur otak Player 2 sesuai mode yang dipilih
     if (mode === 'ai') {
-        players[1].isBot = true; // Player 2 jadi robot
+        players[1].isBot = true; 
         players[1].name = "Player 2 (Bot AI)";
         document.getElementById('log').innerText = "Game Dimulai! Mode: Player vs Bot AI. Giliran Player 1 (Lu).";
     } else if (mode === 'local') {
-        players[1].isBot = false; // Robotnya dimatiin, dimainin manual
+        players[1].isBot = false; 
         players[1].name = "Player 2 (Temen lu)";
         document.getElementById('log').innerText = "Game Dimulai! Mode: Player vs Player (Lokal). Giliran Player 1.";
     }
@@ -51,11 +52,17 @@ function selectMode(mode) {
     // Ngilangin lobi menu pake animasi fade out
     document.getElementById('mainMenu').classList.add('hide-menu');
     
-    // Refresh UI biar nama player ganti kalo emang ada di layar
+    // Refresh UI
     if (typeof updateUI === "function" && typeof dom !== "undefined") {
         updateUI(dom);
     }
 }
+
+// 👉 EVENT BUAT TUTUP POP-UP LOBI ONLINE
+document.getElementById('cancelOnlineBtn').addEventListener('click', () => {
+    document.getElementById('onlineLobbyModal').style.display = 'none';
+});
+
 // ==========================================
 // KODE LU YANG LAMA MENDEM DI BAWAHNYA SINI:
 // ==========================================
@@ -285,4 +292,70 @@ dom.assetBtn.addEventListener('click', () => {
     }
     
     showAssetModal(player, dom);
+});
+
+// ==========================================
+// LOGIKA MABAR ONLINE (FIREBASE)
+// ==========================================
+let myRoomCode = '';
+let myPlayerId = 0; // 0 buat Host (Bandar), 1 buat Guest (Penantang)
+let roomRef = null;
+
+// 👉 1. FUNGSI BANDAR (BIKIN ROOM)
+document.getElementById('createRoomBtn').addEventListener('click', async () => {
+    // Ubah teks tombol biar kelihatan lagi mikir
+    const btn = document.getElementById('createRoomBtn');
+    btn.innerText = "Nyiapin Lapak...";
+    btn.disabled = true;
+
+    // Generate Kode Room Acak (5 Karakter)
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    myRoomCode = '';
+    for (let i = 0; i < 5; i++) myRoomCode += chars.charAt(Math.floor(Math.random() * chars.length));
+
+    // Bikin lapak di Firebase Realtime Database
+    roomRef = db.ref('rooms/' + myRoomCode);
+    await roomRef.set({
+        status: 'waiting', // Status masih nunggu musuh
+        turn: 0, // Giliran jalan
+        players: {
+            0: { name: "Player 1 (Lu)", ready: true },
+            1: { name: "Player 2 (Musuh)", ready: false }
+        }
+    });
+
+    // Set lu sebagai Player 1 (Host)
+    myPlayerId = 0; 
+    gameMode = 'online';
+    players[1].isBot = false; // Pastiin musuhnya bukan AI
+
+    // Ubah Tampilan Pop-Up jadi Ruang Tunggu
+    const modalBox = document.querySelector('#onlineLobbyModal .modal-box');
+    modalBox.style.borderColor = '#0984e3';
+    modalBox.innerHTML = `
+        <h2 style="color: #0984e3; margin-bottom: 10px;">Lapak Udah Buka!</h2>
+        <p style="color: #dcdde1; font-size: 14px;">Kasih kode ini ke musuh lu:</p>
+        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; font-size: 30px; font-weight: bold; letter-spacing: 5px; color: #f1c40f; margin-bottom: 20px;">
+            ${myRoomCode}
+        </div>
+        <p style="color: #2ecc71; font-size: 14px; margin-bottom: 20px; font-weight: bold;">⏳ Menunggu musuh join...</p>
+        <button onclick="window.location.reload()" class="restart-btn" style="background: #e74c3c; color: white; width: 100%; font-size: 14px;">Tutup Lapak</button>
+    `;
+
+    // Pasang CCTV (Listener) buat mantau kalo musuh udah masuk
+    roomRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        
+        // Kalo status berubah jadi 'playing', berarti musuh sukses masuk!
+        if (data && data.status === 'playing') {
+            roomRef.off(); // Matiin CCTV ruang tunggu
+            
+            // Tutup semua menu lobi, masuk ke arena papan
+            document.getElementById('onlineLobbyModal').style.display = 'none';
+            document.getElementById('mainMenu').classList.add('hide-menu');
+            
+            document.getElementById('log').innerText = `🔥 Musuh berhasil masuk! Lu main sebagai Bandar (P1).`;
+            if (typeof updateUI === "function") updateUI(dom);
+        }
+    });
 });
