@@ -103,29 +103,57 @@ players.forEach(p => {
     document.getElementById('space-0').appendChild(p.el);
 });
 
-// FUNGSI ANIMASI JALAN (Dipisah biar rapi)
+// FUNGSI ANIMASI JALAN (Udah Di-Upgrade Jadi Parabola Mulus)
 function startMoving(player, totalRoll) {
-    let stepsTaken = 0; let tempPos = player.pos;
+    let stepsTaken = 0; 
+    let tempPos = player.pos;
+    
     const moveInterval = setInterval(() => {
+        // 1. Catet koordinat awal pion sebelum dipindah
+        const oldRect = player.el.getBoundingClientRect();
+        
         tempPos = (tempPos + 1) % spacesConfig.length;
+        
+        // 2. Pindahin pion ke kotak tujuan di dalam HTML
         document.getElementById(`space-${tempPos}`).appendChild(player.el);
+        
+        // 3. Catet koordinat baru pion setelah mendarat
+        const newRect = player.el.getBoundingClientRect();
+        
+        // 4. Hitung selisih jarak piksel (X dan Y)
+        const deltaX = oldRect.left - newRect.left;
+        const deltaY = oldRect.top - newRect.top;
+
+        // 5. Tembakin Animasi JS (Terbang dari koordinat lama ke baru)
+        player.el.animate([
+            { translate: `${deltaX}px ${deltaY}px` }, // Start di koordinat lama
+            { translate: `${deltaX / 2}px ${deltaY / 2 - 35}px` }, // Puncak lompatan (naik 35px)
+            { translate: `0px 0px` } // Mendarat mulus di koordinat baru
+        ], {
+            duration: 250,
+            easing: 'ease-in-out'
+        });
+
         stepsTaken++;
 
-        // Bunyi langkah tiap kotak
-        sound.playStep();
+        // Bunyi langkah tiap mendarat
+        if (typeof sound !== 'undefined') sound.playStep();
 
+        // Lewat START dapet duit
         if (tempPos === 0) {
             player.money += 20000; updateUI(dom);
-            // Bunyi koin pas dapet gaji
-            if(typeof sound !== 'undefined') sound.playMoney();
+            if (typeof sound !== 'undefined') sound.playMoney();
             dom.logText.innerText = `Cair! ${player.name} lewat GO dapet Rp 20.000`;
-            showFloatingText(20000); // 👉 MUNCULIN DUIT MELAYANG
+            showFloatingText(20000); 
         }
 
+        // Kalo langkahnya udah abis
         if (stepsTaken === totalRoll) {
             clearInterval(moveInterval);
             player.pos = tempPos;
-            handleLanding(player, dom); // Masuk ke rules.js
+            
+            // Jeda dikit biar pionnya napak ke tanah dulu sebelum nge-trigger event
+            setTimeout(() => handleLanding(player, dom), 50); 
         }
     }, 250); 
 }

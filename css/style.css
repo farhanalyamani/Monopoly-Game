@@ -267,7 +267,7 @@ body {
 /* 2. Pion Tanda Maps (Titik Tengah Biar Pas) */
 .player-pin {
     position: absolute !important; 
-    bottom: 22px !important; /* 👉 Diturunin ke 22px biar pas di tengah ruang kosong */
+    bottom: 22px !important; 
     width: 18px !important;
     height: 18px !important;
     border-radius: 50% 50% 50% 0 !important;
@@ -275,7 +275,7 @@ body {
     border: 2px solid #fff !important;
     box-shadow: -3px 3px 5px rgba(0,0,0,0.4) !important;
     z-index: 99 !important; 
-    margin: 0 !important;
+    /* 👉 margin: 0 !important; NYA UDAH GUA HAPUS BIAR BISA LOMPAT */
 }
 
 /* Titik putih di tengah pin */
@@ -290,6 +290,19 @@ body {
     border-radius: 50%;
     transform: translate(-50%, -50%);
     box-shadow: inset 0 1px 2px rgba(0,0,0,0.4);
+}
+
+/* =========================================
+   ANIMASI PION LOMPAT (BOUNCING)
+   ========================================= */
+.is-jumping {
+    /* Tambahin !important biar animasinya ga kalah sama transisi bawaan */
+    animation: pawnJump 0.25s ease-in-out !important; 
+}
+
+@keyframes pawnJump {
+    0%, 100% { margin-bottom: 0; }
+    50% { margin-bottom: 25px; } /* Titik lompatan paling tinggi */
 }
 
 /* Pisah tempat duduk biar kalo di 1 kotak yang sama ga saling tindih */
@@ -441,4 +454,30 @@ body {
 @keyframes floatUp {
     0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     100% { opacity: 0; transform: translate(-50%, -150px) scale(1.5); }
+}
+
+/* =========================================
+   ANIMASI PION LOMPAT (BOUNCING)
+   ========================================= */
+.is-jumping {
+    /* Durasinya 0.25s, disamain persis sama kecepatan gerak di JS lu */
+    animation: pawnJump 0.25s ease-in-out;
+}
+
+@keyframes pawnJump {
+    0%, 100% { margin-bottom: 0; }
+    50% { margin-bottom: 25px; } /* Titik lompatan paling tinggi */
+}
+
+/* =========================================
+   PERBAIKAN PION NGILANG (CLIPPING BUG)
+   ========================================= */
+.space {
+    /* Matiin satpam pemotong elemen, biar pion bisa bebas terbang ngelewatin batas kotak */
+    overflow: visible !important; 
+}
+
+.color-bar {
+    /* Gantiin tugasnya overflow buat bikin pojokan atas tetep melengkung manis */
+    border-radius: 3px 3px 0 0 !important; 
 }
