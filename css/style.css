@@ -406,3 +406,39 @@ body {
     opacity: 0;
     visibility: hidden;
 }
+
+/* =========================================
+   ANIMASI GAME JUICE (GETAR & DUIT MELAYANG)
+   ========================================= */
+
+/* Efek Getar Gempa */
+.shake-screen {
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate3d(-2px, 0, 0); }
+    20%, 80% { transform: translate3d(5px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+    40%, 60% { transform: translate3d(8px, 0, 0); }
+}
+
+/* Efek Duit Melayang */
+.floating-text {
+    position: fixed;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    z-index: 99999;
+    pointer-events: none; /* Biar ga nutupin tombol pas diklik */
+    animation: floatUp 1.5s ease-out forwards;
+    text-shadow: 2px 2px 5px rgba(0,0,0,0.8);
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes floatUp {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -150px) scale(1.5); }
+}

@@ -1,6 +1,32 @@
 // 👉 VARIABEL GLOBAL BUAT NYIMPEN MODE GAME
 let gameMode = 'local'; // Default awal
 
+// 👉 EFEK LAYAR GETAR (SCREEN SHAKE)
+function triggerShake() {
+    const container = document.querySelector('.game-container');
+    if(container) {
+        container.classList.add('shake-screen');
+        setTimeout(() => container.classList.remove('shake-screen'), 400);
+    }
+}
+
+// 👉 EFEK DUIT MELAYANG (FLOATING TEXT)
+function showFloatingText(amount) {
+    const text = document.createElement('div');
+    text.classList.add('floating-text');
+    
+    if (amount > 0) {
+        text.innerText = `+ ${formatRp(amount)}`;
+        text.style.color = '#2ecc71'; 
+    } else {
+        text.innerText = `${formatRp(amount)}`; 
+        text.style.color = '#ff4757'; 
+    }
+
+    document.body.appendChild(text);
+    setTimeout(() => text.remove(), 1500);
+}
+
 // 👉 FUNGSI BUAT MILIH MENU DI LOBI
 function selectMode(mode) {
     if (mode === 'online') {
@@ -91,8 +117,9 @@ function startMoving(player, totalRoll) {
         if (tempPos === 0) {
             player.money += 20000; updateUI(dom);
             // Bunyi koin pas dapet gaji
-            sound.playMoney();
+            if(typeof sound !== 'undefined') sound.playMoney();
             dom.logText.innerText = `Cair! ${player.name} lewat GO dapet Rp 20.000`;
+            showFloatingText(20000); // 👉 MUNCULIN DUIT MELAYANG
         }
 
         if (stepsTaken === totalRoll) {

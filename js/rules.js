@@ -505,20 +505,31 @@ function handleLanding(player, domElements) {
                     if (randomCard.action === "money") {
                         player.money += randomCard.value;
                         if (randomCard.value > 0 && typeof sound !== 'undefined') sound.playMoney();
+                        
+                        // 👉 MUNCULIN ANIMASI DUIT KARTU GACHA DI SINI BLAY
+                        showFloatingText(randomCard.value); 
+                        
+                        // Kalo dapet kartu bayar rumah sakit/pajak yang bikin minus, kasih getar layarnya!
+                        if (randomCard.value < 0) triggerShake();
+                        
                         if (!checkBankrupt(player, domElements)) showEndTurnBtn(domElements, false);
                     } 
                     else if (randomCard.action === "move") {
                         player.pos = randomCard.target;
                         document.getElementById(`space-${player.pos}`).appendChild(player.el);
                         
-                        // Kalo terbang lewat START, dapet gaji
+                        // Kalo disuruh terbang langsung ke START, dapet gaji
                         if (player.pos === 0) { 
                             player.money += 20000; 
                             if(typeof sound !== 'undefined') sound.playMoney(); 
+                            
+                            // 👉 ANIMASI DUIT KALO KARTUNYA NYURUH KE START
+                            showFloatingText(20000); 
                         }
                         
                         setTimeout(() => handleLanding(player, domElements), 400); 
                     }
+                    
                     else if (randomCard.action === "step") {
                         let newPos = player.pos + randomCard.value;
                         if (newPos < 0) newPos = spacesConfig.length + newPos; // Kalo mundur ngelewatin start
@@ -622,6 +633,7 @@ function handleLanding(player, domElements) {
                     offerBuilding(player, space, domElements);
                 }
             } 
+
             // 3. TANAH LAWAN
             else {
                 let denda = space.rent[space.level]; 
@@ -630,6 +642,9 @@ function handleLanding(player, domElements) {
                 
                 let namaBangunan = space.level === 0 ? "Tanah Kosong" : space.level === 5 ? "🔥 HOTEL 🔥" : `${space.level} Rumah`;
                 domElements.logText.innerText = `Apes! Nginjek ${namaBangunan} lawan. Bayar denda ${formatRp(denda)}!`;
+                
+                triggerShake(); // 👉 BIKIN LAYAR GETAR
+                showFloatingText(-denda); // 👉 MUNCULIN DUIT NGURANG
                 
                 if (!checkBankrupt(player, domElements)) showEndTurnBtn(domElements, false);
             }
