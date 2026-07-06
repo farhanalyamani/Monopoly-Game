@@ -1,0 +1,408 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+body { 
+    font-family: 'Poppins', sans-serif; 
+    /* Tekstur meja kayu gratis dari internet */
+    background-color: #2c1e16; 
+    background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png');
+    color: #333; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh; 
+    margin: 0; 
+}
+.game-container { 
+    display: flex; 
+    gap: 30px; 
+    background: rgba(47, 54, 64, 0.95); /* Agak transparan biar kayunya ngintip dikit */
+    padding: 30px; 
+    border-radius: 15px; 
+    /* Bayangan gede biar papannya seolah melayang di atas meja */
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8); 
+    flex-wrap: wrap; 
+    justify-content: center; 
+}
+
+.panel { width: 280px; background: #f5f6fa; padding: 20px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; }
+.panel h1 { font-size: 20px; margin-top: 0; text-align: center; }
+button { background: #4cd137; color: white; border: none; padding: 12px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; transition: 0.2s; margin-top: 5px; }
+button:hover { background: #44bd32; }
+.buy-btn { background: #e1b12c; } .buy-btn:hover { background: #c29b0a; }
+.end-btn { background: #e84118; } .end-btn:hover { background: #c23616; }
+.status { width: 100%; margin-top: 15px; background: #dcdde1; padding: 10px; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+.status hr { border: 0; border-top: 1px solid #bdc3c7; margin: 10px 0; }
+.p1-color { color: #0097e6; font-weight: bold; }
+.p2-color { color: #4cd137; font-weight: bold; }
+.log { width: 100%; margin-top: 15px; background: #2f3640; color: #f5f6fa; padding: 10px; border-radius: 8px; font-size: 12px; text-align: center; box-sizing: border-box; min-height: 50px; }
+
+/* =========================================
+   DESAIN POP-UP GAME OVER & MENANG
+========================================= */
+.modal-overlay {
+    position: fixed; 
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.8); /* Background hitam transparan */
+    display: flex; justify-content: center; align-items: center;
+    z-index: 9999; /* Biar posisinya paling depan nutupin papan */
+}
+
+.modal-box {
+    background: #2f3640; color: #f5f6fa;
+    padding: 40px; border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    border: 3px solid #f1c40f;
+    animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.trophy { font-size: 80px; margin-bottom: 10px; }
+.modal-box h2 { margin: 0 0 10px 0; color: #f1c40f; font-size: 28px; }
+.modal-box p { margin: 0 0 25px 0; color: #dcdde1; font-size: 16px; }
+
+.restart-btn {
+    background: #f1c40f; color: #2d3436; font-weight: bold;
+    font-size: 18px; padding: 15px 30px; border: none; 
+    border-radius: 8px; cursor: pointer;
+    box-shadow: 0 5px 15px rgba(241, 196, 15, 0.4); 
+    transition: 0.2s;
+}
+
+.restart-btn:hover { background: #e1b12c; transform: translateY(-2px); }
+
+/* Animasi mumbul pas pop-up muncul */
+@keyframes popUp {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* =========================================
+   UI MAKEOVER PREMIUM (TARUH DI PALING BAWAH)
+   ========================================= */
+
+/* 1. Import Font Modern */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* 2. Upgrade Tombol Jadi 3D Interaktif */
+#rollDiceBtn, #assetBtn, .buy-btn, .end-btn {
+    border-radius: 12px !important;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: none;
+    box-shadow: 0 6px 0px rgba(0,0,0,0.2) !important;
+    transition: all 0.1s ease-in-out;
+    margin-bottom: 10px;
+}
+
+/* Efek mendem pas tombol diklik */
+#rollDiceBtn:active, #assetBtn:active, .buy-btn:active, .end-btn:active {
+    transform: translateY(6px);
+    box-shadow: 0 0px 0px rgba(0,0,0,0.2) !important;
+}
+
+/* Gradasi Warna Tombol Utama */
+#rollDiceBtn {
+    background: linear-gradient(135deg, #2ecc71, #27ae60) !important;
+    color: white;
+}
+
+#assetBtn {
+    background: linear-gradient(135deg, #a29bfe, #6c5ce7) !important;
+    color: white;
+}
+
+/* 3. Upgrade Kotak Status Player */
+.status {
+    background: #ffffff !important;
+    border-radius: 16px !important;
+    padding: 15px 20px !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important;
+    border: 1px solid #e1e8ed;
+    margin-top: 15px;
+}
+
+.status p {
+    margin: 8px 0;
+    font-size: 15px;
+}
+
+.status hr {
+    border: none;
+    border-top: 2px dashed #dfe6e9;
+    margin: 10px 0;
+}
+
+/* 4. Upgrade Log Info (Terminal Teks Bawah) */
+#log {
+    background: #2d3436 !important;
+    color: #f1c40f !important;
+    border-radius: 12px !important;
+    border-left: 5px solid #f1c40f !important;
+    font-weight: 600;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+    margin-top: 20px;
+}
+
+/* 5. Poles Tengah Papan (Biar Ga Terlalu Kosong) */
+.center-board {
+    font-family: 'Poppins', sans-serif !important;
+    font-weight: 800 !important;
+    letter-spacing: 5px;
+    color: rgba(231, 76, 60, 0.15) !important; /* Bikin warnanya agak transparan/watermark */
+    font-size: 4rem !important;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.05);
+}
+
+/* 6. Animasi Kartu Gacha Tengah Papan */
+#centerCard {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0); /* Awalnya ngumpet (kecil banget) */
+    width: 250px;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Efek mantul */
+    z-index: 100;
+    border: 3px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Class ini ditambahin lewat JS buat munculin kartunya */
+#centerCard.show {
+    transform: translate(-50%, -50%) scale(1.2); /* Membesar dan muncul */
+}
+
+#centerCard h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-bottom: 2px dashed rgba(255,255,255,0.5);
+    padding-bottom: 5px;
+}
+
+#centerCard p {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.4;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Kotak tempat naruh tumpukan kartu (Sekarang jadi Tumpukan Kartu 3D) */
+.deck-placeholder {
+    position: absolute;
+    width: 140px;
+    height: 90px;
+    border: 4px solid #fff; /* Pinggiran kartu warna putih biar realistis */
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    color: #fff; /* Teks jadi putih biar nabrak warna kartunya */
+    text-align: center;
+    line-height: 1.2;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+    z-index: 2;
+    
+    /* 👉 INI TRIKNYA BLAY: Bikin ilusi tumpukan kartu pake shadow berlapis */
+    box-shadow: 
+        1px 1px 0px #ecf0f1, 2px 2px 0px #bdc3c7,
+        3px 3px 0px #ecf0f1, 4px 4px 0px #bdc3c7,
+        5px 5px 0px #ecf0f1, 6px 6px 0px #bdc3c7,
+        7px 7px 15px rgba(0,0,0,0.5);
+}
+
+.deck-placeholder span {
+    font-size: 28px;
+    margin-bottom: 2px;
+    opacity: 1; /* Dibikin terang lagi */
+    filter: none;
+}
+
+/* Tumpukan Dana Umum (Warna Biru) */
+.deck-dana-umum {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    top: 18%;
+    left: 18%;
+    transform: rotate(-45deg);
+}
+
+/* Tumpukan Kesempatan (Warna Merah) */
+.deck-kesempatan {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    bottom: 18%;
+    right: 18%;
+    transform: rotate(-45deg);
+}
+
+/* =========================================
+   REVISI: DESAIN SIMPEL & CLEAN
+   ========================================= */
+
+/* 1. Balikin Papan Jadi Elegan (Ga usah lebay shadow-nya) */
+.board {
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+    border: none !important;
+}
+
+/* Pastikan kotak negara punya posisi relative biar stikernya ga kabur */
+.space {
+    position: relative;
+}
+
+/* 2. Pion Tanda Maps (Titik Tengah Biar Pas) */
+.player-pin {
+    position: absolute !important; 
+    bottom: 22px !important; /* 👉 Diturunin ke 22px biar pas di tengah ruang kosong */
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 50% 50% 50% 0 !important;
+    transform: rotate(-45deg) !important;
+    border: 2px solid #fff !important;
+    box-shadow: -3px 3px 5px rgba(0,0,0,0.4) !important;
+    z-index: 99 !important; 
+    margin: 0 !important;
+}
+
+/* Titik putih di tengah pin */
+.player-pin::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    background: #fff;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.4);
+}
+
+/* Pisah tempat duduk biar kalo di 1 kotak yang sama ga saling tindih */
+.pin-1 { 
+    left: 20% !important; /* Player 1 nongkrong di kiri */
+    background: #0984e3 !important; 
+}
+.pin-2 { 
+    right: 20% !important; /* Player 2 nongkrong di kanan */
+    background: #00b894 !important; 
+}
+
+/* 3. Emblem Kepemilikan (Dibikin Persegi Panjang) */
+.owner-tag {
+    position: absolute !important;
+    top: 58% !important; 
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important; 
+    width: auto !important; 
+    display: inline-block !important; 
+    font-family: 'Poppins', sans-serif !important;
+    font-weight: 800 !important;
+    font-size: 9px !important; 
+    /* 👉 INI OBATNYA: Padding atas-bawah 2px, Kiri-Kanan 12px */
+    padding: 2px 12px !important; 
+    border-radius: 4px !important;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4) !important;
+    border: 1.5px solid rgba(255,255,255,0.9) !important; 
+    color: white !important;
+    z-index: 10;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5) !important;
+    margin: 0 !important;
+    opacity: 0.9 !important; 
+}
+
+/* 4. Panel Kiri (Solid, Clean, Terang) */
+.panel {
+    background: #f8f9fa !important;
+    backdrop-filter: none !important;
+    box-shadow: 5px 0 15px rgba(0,0,0,0.1) !important;
+    border: none !important;
+}
+
+/* =========================================
+   DESAIN MENU UTAMA (LOBI)
+   ========================================= */
+.menu-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    /* Latar belakang gelap transparan biar nyatu sama tema */
+    background: rgba(44, 30, 22, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999; /* Paling depan nutupin game */
+    transition: opacity 0.5s ease, visibility 0.5s ease; /* Animasi ngilang yang halus */
+    backdrop-filter: blur(5px);
+}
+
+.menu-box {
+    background: rgba(47, 54, 64, 0.95);
+    padding: 50px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    border: 2px solid rgba(255,255,255,0.1);
+    width: 320px;
+}
+
+.menu-logo {
+    font-family: 'Poppins', sans-serif !important;
+    font-weight: 800 !important;
+    letter-spacing: 5px;
+    color: #f1c40f;
+    font-size: 2.8rem;
+    margin: 0 0 5px 0;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.menu-subtitle {
+    font-family: 'Poppins', sans-serif;
+    color: #dcdde1;
+    margin: 0 0 35px 0;
+    font-weight: 600;
+    letter-spacing: 1px;
+    font-size: 14px;
+}
+
+.menu-btn {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 15px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.menu-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.4); }
+.menu-btn:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+
+/* Warna Tombol */
+.btn-ai { background: linear-gradient(135deg, #0984e3, #74b9ff); }
+.btn-local { background: linear-gradient(135deg, #00b894, #55efc4); }
+.btn-online { background: linear-gradient(135deg, #e17055, #fab1a0); }
+
+/* Class untuk nyembunyiin menu pas tombol diklik */
+.hide-menu {
+    opacity: 0;
+    visibility: hidden;
+}

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monopoli Modular</title>
+    <!-- CSS Dipisah -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/board.css">
+    <link rel="stylesheet" href="css/dadu-pion.css">
+</head>
+<body>
+    <!-- 👉 MENU UTAMA LOBI GAME -->
+    <div id="mainMenu" class="menu-overlay">
+        <div class="menu-box">
+            <h1 class="menu-logo">MONOPOLI</h1>
+            <p class="menu-subtitle">Pilih Mode Permainan Lu!</p>
+            
+            <button class="menu-btn btn-ai" onclick="selectMode('ai')">🤖 Player vs AI</button>
+            <button class="menu-btn btn-local" onclick="selectMode('local')">👥 Player vs Player (Lokal)</button>
+            <button class="menu-btn btn-online" onclick="selectMode('online')">🌐 Player vs Player (Online)</button>
+        </div>
+    </div>
+    
+    <div class="game-container">
+        <div class="panel">
+            <h1>🎲 Monopoli Modular</h1>
+            
+            <div class="dice-scene">
+                <div id="cube1" class="cube">
+                    <div class="cube-face cube-face-1"><span class="dot"></span></div><div class="cube-face cube-face-2"><span class="dot"></span><span class="dot"></span></div><div class="cube-face cube-face-3"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><div class="cube-face cube-face-4"><div class="column"><span class="dot"></span><span class="dot"></span></div><div class="column"><span class="dot"></span><span class="dot"></span></div></div><div class="cube-face cube-face-5"><div class="column"><span class="dot"></span><span class="dot"></span></div><div class="column"><span class="dot"></span></div><div class="column"><span class="dot"></span><span class="dot"></span></div></div><div class="cube-face cube-face-6"><div class="column"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><div class="column"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+                </div>
+                <div id="cube2" class="cube">
+                    <div class="cube-face cube-face-1"><span class="dot"></span></div><div class="cube-face cube-face-2"><span class="dot"></span><span class="dot"></span></div><div class="cube-face cube-face-3"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><div class="cube-face cube-face-4"><div class="column"><span class="dot"></span><span class="dot"></span></div><div class="column"><span class="dot"></span><span class="dot"></span></div></div><div class="cube-face cube-face-5"><div class="column"><span class="dot"></span><span class="dot"></span></div><div class="column"><span class="dot"></span></div><div class="column"><span class="dot"></span><span class="dot"></span></div></div><div class="cube-face cube-face-6"><div class="column"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><div class="column"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+                </div>
+            </div>
+
+            <button id="rollDiceBtn">Kocok Dadu!</button>
+            <button id="buyBtn" class="buy-btn" style="display: none;">Beli</button>
+            <button id="endTurnBtn" class="end-btn" style="display: none;">Selesai Giliran</button>
+            <button id="payJailBtn" class="buy-btn" style="display: none; background: #e1b12c; margin-top: 5px;">Lanjutkan Bayar (Rp 50rb)</button>
+            <button id="waitJailBtn" class="end-btn" style="display: none; background: #7f8fa6; margin-top: 5px;">Lanjutkan Cari Dadu</button>
+            
+            <!-- Tombol Aset yang bener tempatnya di sini -->
+            <button id="assetBtn" class="end-btn" style="background: #9b59b6; margin-top: 5px;">Lihat Aset Gua</button>
+            
+            <div class="status">
+                <p>Giliran: <strong id="turnText" class="p1-color">Player 1 (Biru)</strong></p>
+                <hr>
+                <p class="p1-color">Player 1: <strong id="p1Money">Rp 150.000</strong></p>
+                <p class="p2-color">Player 2: <strong id="p2Money">Rp 150.000</strong></p>
+            </div>
+            
+            <div id="log" class="log">Selamat datang blay! P1 jalan duluan.</div>
+        </div>
+
+        <div class="board" id="board">
+            
+            <!-- 👉 UPGRADE: TENGAH PAPAN DIBIKIN ADA TEMPAT KARTUNYA -->
+            <div class="center-board">
+                <div class="deck-placeholder deck-dana-umum">
+                    <span>📦</span><br>DANA UMUM
+                </div>
+                
+                <div class="logo-monopoli">MONOPOLI</div>
+                
+                <div class="deck-placeholder deck-kesempatan">
+                    <span>❓</span><br>KESEMPATAN
+                </div>
+            </div>
+            
+            <!-- Wadah Pop-Up Kartu Gacha tetep di sini -->
+            <div id="centerCard" class="center-card-hidden">
+                <h3 id="cardType">Kesempatan</h3>
+                <p id="cardText">Isi kartunya di sini</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS Dipisah (Urutannya Wajib Gini) -->
+    <script src="js/data.js"></script>
+    <script src="js/rules.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/main.js"></script>
+
+    <!-- SEMUA POP-UP NGUMPUL DI BAWAH SINI BIAR RAPI -->
+
+    <!-- KOTAK POP-UP BEBAS PARKIR (TELEPORT) -->
+    <div id="teleportModal" class="modal-overlay" style="display: none; z-index: 9999;">
+        <div class="modal-box" style="border-color: #3498db; width: 400px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="trophy" style="font-size: 50px;">🛫</div>
+            <h2 style="color: #3498db; margin-bottom: 5px;">Penerbangan VIP</h2>
+            <p style="color: #dcdde1; margin-bottom: 15px;">Pilih negara tujuan lu blay:</p>
+            
+            <!-- Tempat daftar tombol negara (dibikin 2 kolom otomatis pakai grid) -->
+            <div id="teleportList" style="overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; padding-right: 5px;">
+            </div>
+            
+            <button id="cancelTeleportBtn" class="restart-btn" style="background: #e74c3c; color: white; box-shadow: none;">Gak Jadi (Rebahan Aja)</button>
+        </div>
+    </div>
+
+    <!-- KOTAK POP-UP ASET GUA -->
+    <div id="assetModal" class="modal-overlay" style="display: none; z-index: 9999;">
+        <div class="modal-box" style="border-color: #9b59b6; width: 350px; max-height: 80vh; overflow-y: auto;">
+            <div class="trophy" style="font-size: 50px;">📜</div>
+            <h2>Daftar Aset Gua</h2>
+            <div id="assetList" style="text-align: left; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;"></div>
+            <button id="closeAssetBtn" class="restart-btn" style="background: #7f8fa6; color: white; box-shadow: none;">Tutup</button>
+        </div>
+    </div>
+
+    <!-- KOTAK POP-UP BANGUN RUMAH & HOTEL -->
+    <div id="buildModal" class="modal-overlay" style="display: none;">
+        <div class="modal-box" style="border-color: #2ecc71;">
+            <div class="trophy" id="buildIcon">🏠</div>
+            <h2 id="buildTitle">Bangun Properti</h2>
+            <p id="buildInfo">Harga per rumah: Rp X<br>Duit lu: Rp Y</p>
+            <div id="buildButtons" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px;"></div>
+            <button id="cancelBuildBtn" class="restart-btn" style="background: #e74c3c; color: white; box-shadow: none;">Nanti Aja (Skip)</button>
+        </div>
+    </div>
+
+    <!-- KOTAK POP-UP GAME OVER -->
+    <div id="gameOverModal" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <div class="trophy">🏆</div>
+            <h2 id="winnerTitle">Pemenangnya adalah...</h2>
+            <p id="loserText">Player X Bangkrut!</p>
+            <button id="restartBtn" class="restart-btn" onclick="window.location.reload()">Main Lagi!</button>
+        </div>
+    </div>
+
+    <!-- KOTAK POP-UP CUSTOM ALERT / CONFIRM -->
+    <div id="customDialogModal" class="modal-overlay" style="display: none; z-index: 10000;">
+        <div class="modal-box" style="border-color: #f39c12; width: 320px;">
+            <h2 id="dialogTitle" style="color: #f39c12; margin-bottom: 10px;">Perhatian</h2>
+            <p id="dialogMessage" style="color: #dcdde1; margin-bottom: 20px; font-size: 14px; white-space: pre-wrap;"></p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="dialogCancelBtn" class="restart-btn" style="background: #7f8fa6; padding: 10px 20px; font-size: 14px; box-shadow: none; display: none;">Batal</button>
+                <button id="dialogOkBtn" class="restart-btn" style="background: #e67e22; padding: 10px 20px; font-size: 14px; box-shadow: none;">OK</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
