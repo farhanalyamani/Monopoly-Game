@@ -328,14 +328,12 @@ document.getElementById('createRoomBtn').addEventListener('click', async () => {
     btn.disabled = true;
 
     try {
-        // Generate Kode Room Acak (5 Karakter)
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         myRoomCode = '';
         for (let i = 0; i < 5; i++) myRoomCode += chars.charAt(Math.floor(Math.random() * chars.length));
 
         roomRef = db.ref('rooms/' + myRoomCode);
         
-        // Pake Promise.race biar kalo Firebase bengong lebih dari 5 detik, langsung divonis gagal (ga ngegantung)
         await Promise.race([
             roomRef.set({
                 status: 'waiting', 
@@ -345,15 +343,13 @@ document.getElementById('createRoomBtn').addEventListener('click', async () => {
                     1: { name: "Player 2 (Musuh)", ready: false }
                 }
             }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout! Firebase ga ngerespon. Cek lagi Realtime Database lu udah di-Create apa belum.")), 5000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout! Firebase ga ngerespon.")), 5000))
         ]);
 
-        // Kalo sukses nembus Firebase, set lu sebagai Player 1 (Host)
         myPlayerId = 0; 
         gameMode = 'online';
         players[1].isBot = false; 
 
-        // Ubah Tampilan Pop-Up jadi Ruang Tunggu
         const modalBox = document.querySelector('#onlineLobbyModal .modal-box');
         modalBox.style.borderColor = '#0984e3';
         modalBox.innerHTML = `
@@ -366,7 +362,6 @@ document.getElementById('createRoomBtn').addEventListener('click', async () => {
             <button onclick="window.location.reload()" class="restart-btn" style="background: #e74c3c; color: white; width: 100%; font-size: 14px;">Tutup Lapak</button>
         `;
 
-        // Pasang CCTV buat mantau musuh
         roomRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (data && data.status === 'playing') {
@@ -375,37 +370,11 @@ document.getElementById('createRoomBtn').addEventListener('click', async () => {
                 document.getElementById('mainMenu').classList.add('hide-menu');
                 document.getElementById('log').innerText = `🔥 Musuh berhasil masuk! Lu main sebagai Bandar (P1).`;
                 if (typeof updateUI === "function") updateUI(dom);
-                // 👉 PANGGIL MESIN CCTV DISINI
                 setupOnlineCCTV();
             }
         });
 
-        // 7. Pantau Musuh Jual Tanah / Aset
-        roomRef.child('sellProperty').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data && data.sellerId !== myPlayerId && data.ts > sessionStartTime) {
-                const space = spacesConfig[data.spaceId];
-                const enemy = players[data.sellerId];
-                
-                enemy.money += data.refund; 
-                space.owner = null;
-                space.level = 0;
-                
-                // Sapu bersih tanda kepemilikan dan bangunan di layar kita
-                const spaceEl = document.getElementById(`space-${data.spaceId}`);
-                let tags = spaceEl.querySelectorAll('.owner-tag'); 
-                tags.forEach(t => t.remove());
-                
-                let indicators = spaceEl.querySelectorAll('.building-indicator'); 
-                indicators.forEach(i => i.remove());
-                
-                dom.logText.innerText = `Musuh lagi BU! ${space.name} dijual rugi.`;
-                if (typeof updateUI === "function") updateUI(dom);
-            }
-        });
-
     } catch (error) {
-        // Kalo gagal, munculin alert error-nya dan hidupin tombolnya lagi
         console.error("🔥 ERROR FIREBASE:", error);
         alert("Gagal bikin room blay!\nAlasan: " + error.message);
         btn.innerText = "Bikin Room Baru";
@@ -418,48 +387,39 @@ document.getElementById('joinRoomBtn').addEventListener('click', async () => {
     const btn = document.getElementById('joinRoomBtn');
     const codeInput = document.getElementById('roomCodeInput').value.trim().toUpperCase();
 
-    // Kalo kolom kodenya kosong tapi nekat diklik
     if (!codeInput) {
         alert("Masukin kodenya dulu blay!");
         return;
     }
 
-    // Ubah teks tombol biar kelihatan mikir
     btn.innerText = "Nyari Lapak...";
     btn.disabled = true;
 
     try {
-        // Nyari lapak di Firebase berdasarkan kode yang diketik
         const tempRef = db.ref('rooms/' + codeInput);
         const snapshot = await tempRef.once('value');
 
         if (snapshot.exists()) {
             const roomData = snapshot.val();
             
-            // Cek apakah room masih nunggu musuh (belum penuh)
             if (roomData.status === 'waiting') {
-                // Berhasil nemu lapak!
                 myRoomCode = codeInput;
-                myPlayerId = 1; // Lu jadi Player 2 (Guest)
+                myPlayerId = 1; 
                 gameMode = 'online';
-                players[1].isBot = false; // Matiin otak bot
-                roomRef = tempRef; // Set global roomRef
+                players[1].isBot = false; 
+                roomRef = tempRef; 
 
-                // 👉 INI KUNCI SINKRONISASINYA:
-                // Ngubah status room jadi 'playing' biar HP si Bandar (Host) otomatis masuk ke game
                 await roomRef.update({
                     status: 'playing',
                     'players/1/ready': true
                 });
 
-                // Tutup semua pop-up lobi di HP lu (Guest)
                 document.getElementById('onlineLobbyModal').style.display = 'none';
                 document.getElementById('mainMenu').classList.add('hide-menu');
                 
                 document.getElementById('log').innerText = `🔥 Berhasil masuk lapak! Lu main sebagai Penantang (P2). Giliran P1 jalan duluan.`;
                 if (typeof updateUI === "function") updateUI(dom);
-                // 👉 PANGGIL MESIN CCTV DISINI
-                 setupOnlineCCTV();
+                setupOnlineCCTV();
 
             } else {
                 alert("Waduh blay, room-nya udah penuh atau udah mulai main!");
@@ -472,7 +432,6 @@ document.getElementById('joinRoomBtn').addEventListener('click', async () => {
         alert("Gagal join room blay!\nAlasan: " + error.message);
     }
 
-    // Balikin tombol kayak semula kalo lu gagal join
     btn.innerText = "Join Room";
     btn.disabled = false;
 });
@@ -480,12 +439,12 @@ document.getElementById('joinRoomBtn').addEventListener('click', async () => {
 // ==========================================
 // MESIN CCTV SINKRONISASI ONLINE (UPGRADE DEWA)
 // ==========================================
-let sessionStartTime = Date.now(); // Biar ga ngebaca riwayat lama pas baru join
+let sessionStartTime = Date.now(); 
 
 function setupOnlineCCTV() {
     if (currentTurn !== myPlayerId) dom.rollBtn.style.display = 'none';
 
-    // 1. Pantau kalo musuh ngocok dadu
+    // 1. Pantau dadu
     roomRef.child('lastRoll').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data && data.pId !== myPlayerId && data.timestamp > sessionStartTime) {
@@ -507,7 +466,7 @@ function setupOnlineCCTV() {
         }
     });
 
-    // 2. Pantau kalo musuh selesai giliran
+    // 2. Pantau giliran
     roomRef.child('turn').on('value', (snapshot) => {
         const newTurn = snapshot.val();
         if (newTurn !== null && newTurn !== currentTurn) {
@@ -523,11 +482,10 @@ function setupOnlineCCTV() {
         }
     });
 
-    // 3. Pantau Tarikan Kartu Gacha (Biar Barengan Animasi)
+    // 3. Pantau Gacha
     roomRef.child('gachaCard').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data && data.ts > sessionStartTime) {
-            // Dieksekusi di kedua layar secara bersamaan!
             executeGachaCard(players[data.pId], data.index, data.spaceName, dom);
         }
     });
@@ -552,7 +510,7 @@ function setupOnlineCCTV() {
         }
     });
 
-    // 5. Pantau Musuh Bangun Rumah/Hotel
+    // 5. Pantau Musuh Bangun
     roomRef.child('buildProperty').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data && data.ownerId !== myPlayerId && data.ts > sessionStartTime) {
@@ -569,7 +527,7 @@ function setupOnlineCCTV() {
         }
     });
 
-    // 6. Pantau Penerbangan VIP (Bebas Parkir)
+    // 6. Pantau Teleport
     roomRef.child('teleport').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data && data.pId !== myPlayerId && data.ts > sessionStartTime) {
@@ -579,6 +537,29 @@ function setupOnlineCCTV() {
              enemy.pos = data.targetId;
              document.getElementById(`space-${data.targetId}`).appendChild(enemy.el);
              setTimeout(() => handleLanding(enemy, dom), 500);
+        }
+    });
+
+    // 👉 7. FIX: Pantau Jual Tanah (Udah bener posisinya di dalem CCTV sekarang)
+    roomRef.child('sellProperty').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.sellerId !== myPlayerId && data.ts > sessionStartTime) {
+            const space = spacesConfig[data.spaceId];
+            const enemy = players[data.sellerId];
+            
+            enemy.money += data.refund; 
+            space.owner = null;
+            space.level = 0;
+            
+            const spaceEl = document.getElementById(`space-${data.spaceId}`);
+            let tags = spaceEl.querySelectorAll('.owner-tag'); 
+            tags.forEach(t => t.remove());
+            
+            let indicators = spaceEl.querySelectorAll('.building-indicator'); 
+            indicators.forEach(i => i.remove());
+            
+            dom.logText.innerText = `Musuh lagi BU! ${space.name} dijual rugi.`;
+            if (typeof updateUI === "function") updateUI(dom);
         }
     });
 }
