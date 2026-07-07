@@ -562,4 +562,44 @@ function setupOnlineCCTV() {
             if (typeof updateUI === "function") updateUI(dom);
         }
     });
+
+    // 👉 8. SINKRONISASI KABUR (DISCONNECT & REFRESH)
+    
+    // Fitur sakti Firebase: Kalo koneksi putus mendadak, server otomatis nge-set status nyerah
+    roomRef.child('surrender').onDisconnect().set(myPlayerId);
+
+    // CCTV mantau kalo ada yang nyerah (nge-refresh / kabur)
+    roomRef.child('surrender').on('value', (snapshot) => {
+        const data = snapshot.val();
+        
+        // Kalo ada data, dan yang nyerah BUKAN kita, dan game belum kelar
+        if (data !== null && data !== myPlayerId && !gameOver) {
+            gameOver = true; // Kunci permainan
+            
+            // Matiin semua tombol di layar kita
+            dom.buyBtn.style.display = 'none';
+            dom.endTurnBtn.style.display = 'none';
+            dom.rollBtn.style.display = 'none';
+            
+            dom.logText.innerHTML = `💀 <strong>MUSUH KABUR!</strong> Pengecut mental dari arena.`;
+            
+            // Munculin Pop-Up Game Over secara paksa dengan teks khusus
+            setTimeout(() => {
+                const modal = document.getElementById('gameOverModal');
+                document.getElementById('winnerTitle').innerText = `🎉 LU MENANG W.O! 🎉`;
+                document.getElementById('loserText').innerText = `Musuh mental / refresh browser. Cupu!`;
+                modal.style.display = 'flex'; 
+            }, 1000);
+        }
+    });
 }
+
+// ==========================================
+// DETEKSI PLAYER KABUR / REFRESH BROWSER
+// ==========================================
+window.addEventListener('beforeunload', () => {
+    // Kalo lagi main online dan game belum kelar, otomatis ngirim sinyal nyerah sebelum tab ketutup
+    if (gameMode === 'online' && !gameOver && roomRef) {
+        roomRef.child('surrender').set(myPlayerId);
+    }
+});
