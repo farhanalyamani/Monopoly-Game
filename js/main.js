@@ -296,11 +296,13 @@ dom.endTurnBtn.addEventListener('click', () => {
 // 👉 FITUR BARU: Event Buka Modal Aset (Pake Custom Dialog kalo bukan gilirannya)
 dom.assetBtn.addEventListener('click', () => {
     if (gameOver) return;
-    const player = players[currentTurn];
     
-    // Cuma bisa dibuka pas giliran Lu (Manusia)
-    if (player.isBot) {
-        // Ganti alert bawaan browser pake custom dialog kita
+    // FIX BUG: Kalo online, lu cuma boleh liat aset lu sendiri!
+    let targetPlayerId = gameMode === 'online' ? myPlayerId : currentTurn;
+    const player = players[targetPlayerId];
+    
+    // Cuma bisa dibuka pas giliran Lu (Manusia) di mode AI/Lokal
+    if (gameMode !== 'online' && player.isBot) {
         showCustomDialog(
             "⚠️ Sabar Blay!", 
             "Ini lagi giliran Bot AI, lu ga bisa utak-atik aset sekarang.", 
@@ -375,6 +377,30 @@ document.getElementById('createRoomBtn').addEventListener('click', async () => {
                 if (typeof updateUI === "function") updateUI(dom);
                 // 👉 PANGGIL MESIN CCTV DISINI
                 setupOnlineCCTV();
+            }
+        });
+
+        // 7. Pantau Musuh Jual Tanah / Aset
+        roomRef.child('sellProperty').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.sellerId !== myPlayerId && data.ts > sessionStartTime) {
+                const space = spacesConfig[data.spaceId];
+                const enemy = players[data.sellerId];
+                
+                enemy.money += data.refund; 
+                space.owner = null;
+                space.level = 0;
+                
+                // Sapu bersih tanda kepemilikan dan bangunan di layar kita
+                const spaceEl = document.getElementById(`space-${data.spaceId}`);
+                let tags = spaceEl.querySelectorAll('.owner-tag'); 
+                tags.forEach(t => t.remove());
+                
+                let indicators = spaceEl.querySelectorAll('.building-indicator'); 
+                indicators.forEach(i => i.remove());
+                
+                dom.logText.innerText = `Musuh lagi BU! ${space.name} dijual rugi.`;
+                if (typeof updateUI === "function") updateUI(dom);
             }
         });
 

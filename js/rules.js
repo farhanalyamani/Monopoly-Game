@@ -73,7 +73,7 @@ function showTeleportModal(player, domElements) {
     modal.style.display = 'flex';
 }
 
-// 👉 UPDATE: TAMPILIN & JUAL ASET (Dikelompokin per Komplek)
+// 👉 UPDATE: TAMPILIN & JUAL ASET (SINKRONISASI ONLINE & FIX BUG)
 function showAssetModal(player, domElements, isForced = false) {
     const modal = document.getElementById('assetModal');
     const assetList = document.getElementById('assetList');
@@ -91,7 +91,6 @@ function showAssetModal(player, domElements, isForced = false) {
             assetList.innerHTML = '<p style="text-align:center; color:#e74c3c;">Lu belum punya tanah sama sekali blay! Kismin.</p>';
         }
     } else {
-        // KELOMPOKIN ASET LU BERDASARKAN KOMPLEK
         let grouped = {};
         myAssets.forEach(space => {
             let groupName = space.komplek ? `Komplek ${space.komplek}` : `Fasilitas & Stasiun`;
@@ -102,17 +101,11 @@ function showAssetModal(player, domElements, isForced = false) {
         let sortedGroups = Object.keys(grouped).sort();
 
         sortedGroups.forEach(groupName => {
-            // Bikin Garis Pembatas (Divider)
             let divider = document.createElement('div');
-            divider.style.marginTop = '15px';
-            divider.style.paddingBottom = '5px';
-            divider.style.borderBottom = '2px dashed #9b59b6';
-            divider.style.color = '#9b59b6';
-            divider.style.fontWeight = 'bold';
+            divider.style.marginTop = '15px'; divider.style.paddingBottom = '5px'; divider.style.borderBottom = '2px dashed #9b59b6'; divider.style.color = '#9b59b6'; divider.style.fontWeight = 'bold';
             divider.innerText = `📍 ${groupName}`;
             assetList.appendChild(divider);
 
-            // Bikin daftar aset di bawah kompleknya
             grouped[groupName].forEach(space => {
                 let totalModal = space.price + (space.level * space.housePrice);
                 let jualRugi = Math.floor(totalModal / 2); 
@@ -120,12 +113,7 @@ function showAssetModal(player, domElements, isForced = false) {
                 let dendaSekarang = space.rent[space.level]; 
 
                 let assetItem = document.createElement('div');
-                assetItem.style.background = '#353b48';
-                assetItem.style.padding = '10px';
-                assetItem.style.borderRadius = '8px';
-                assetItem.style.display = 'flex';
-                assetItem.style.justifyContent = 'space-between';
-                assetItem.style.alignItems = 'center';
+                assetItem.style.background = '#353b48'; assetItem.style.padding = '10px'; assetItem.style.borderRadius = '8px'; assetItem.style.display = 'flex'; assetItem.style.justifyContent = 'space-between'; assetItem.style.alignItems = 'center';
 
                 assetItem.innerHTML = `
                     <div>
@@ -137,13 +125,7 @@ function showAssetModal(player, domElements, isForced = false) {
 
                 let jualBtn = document.createElement('button');
                 jualBtn.innerText = `Jual\n(${formatRp(jualRugi)})`;
-                jualBtn.style.background = '#e74c3c';
-                jualBtn.style.color = 'white';
-                jualBtn.style.border = 'none';
-                jualBtn.style.padding = '5px 10px';
-                jualBtn.style.borderRadius = '5px';
-                jualBtn.style.cursor = 'pointer';
-                jualBtn.style.fontSize = '12px';
+                jualBtn.style.background = '#e74c3c'; jualBtn.style.color = 'white'; jualBtn.style.border = 'none'; jualBtn.style.padding = '5px 10px'; jualBtn.style.borderRadius = '5px'; jualBtn.style.cursor = 'pointer'; jualBtn.style.fontSize = '12px';
 
                 jualBtn.onclick = () => {
                     showCustomDialog(
@@ -158,13 +140,21 @@ function showAssetModal(player, domElements, isForced = false) {
                             let posIndex = spacesConfig.indexOf(space);
                             const spaceEl = document.getElementById(`space-${posIndex}`);
                             
-                            let tag = spaceEl.querySelector('.owner-tag'); if(tag) tag.remove();
-                            let indicator = spaceEl.querySelector('.building-indicator'); if(indicator) indicator.remove();
+                            // 👉 FIX BUG: Sapu bersih semua class tag & rumah pake querySelectorAll biar pasti ilang
+                            let tags = spaceEl.querySelectorAll('.owner-tag'); 
+                            tags.forEach(t => t.remove());
+                            let indicators = spaceEl.querySelectorAll('.building-indicator'); 
+                            indicators.forEach(i => i.remove());
 
                             updateUI(domElements);
                             if(typeof sound !== 'undefined') sound.playMoney(); 
                             domElements.logText.innerText = `Jual rugi! ${space.name} dilepas seharga ${formatRp(jualRugi)}.`;
                             
+                            // 👉 SINKRONISASI: Laporin ke musuh kalo lu udah ngejual tanah ini
+                            if (gameMode === 'online') {
+                                roomRef.child('sellProperty').set({ spaceId: posIndex, sellerId: player.id, refund: jualRugi, ts: Date.now() });
+                            }
+
                             showAssetModal(player, domElements, isForced);
                         }
                     );
