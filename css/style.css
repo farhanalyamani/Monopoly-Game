@@ -481,3 +481,54 @@ body {
     /* Gantiin tugasnya overflow buat bikin pojokan atas tetep melengkung manis */
     border-radius: 3px 3px 0 0 !important; 
 }
+
+/* =========================================
+   MODE HP (MOBILE RESPONSIVE TINGKAT DEWA)
+   ========================================= */
+@media screen and (max-width: 850px) {
+    /* 1. Atur Ulang Kontainer Utama (Panel pindah ke bawah) */
+    .game-container {
+        flex-direction: column-reverse; 
+        padding: 10px;
+        gap: 15px;
+    }
+
+    /* 2. Susutkan Papan Jadi Elastis ngikutin layar HP (pake 'vw' alias Viewport Width) */
+    .board {
+        grid-template-columns: repeat(11, 8.5vw) !important;
+        grid-template-rows: repeat(11, 8.5vw) !important;
+        padding: 5px;
+        gap: 1px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* 3. Susutkan Teks & Elemen di dalem kotak papan */
+    .space { font-size: 7px; }
+    .space-name { font-size: 5px; padding: 1px; }
+    .price-tag { font-size: 5px; bottom: 1px; }
+    .color-bar { height: 8px; font-size: 4px; }
+    .owner-tag { font-size: 5px !important; padding: 1px 4px !important; top: 65% !important;}
+    .building-indicator { font-size: 8px !important; margin-top: 0 !important; }
+    
+    /* 4. Susutkan Bagian Tengah Papan */
+    .center-board { font-size: 1.5rem !important; }
+    .deck-placeholder { width: 60px; height: 35px; border: 2px solid #fff; font-size: 6px; }
+    .deck-placeholder span { font-size: 12px; margin-bottom: 0; }
+    
+    /* 5. Cekik Ukuran Pion biar ga menuh-menuhin kotak */
+    .player-pin { width: 10px !important; height: 16px !important; bottom: 10px !important; }
+    .pin-1 { left: 15% !important; }
+    .pin-2 { right: 15% !important; }
+    
+    /* 6. Atur Panel Kendali Biar Menuhin Lebar HP */
+    .panel { width: 100%; box-sizing: border-box; padding: 15px; }
+    
+    /* 7. Geser Tombol Nyerah Biar Ga Ketutupan Jari */
+    #surrenderBtn { 
+        bottom: 10px !important; 
+        left: 10px !important; 
+        font-size: 11px !important; 
+        padding: 8px 12px !important; 
+    }
+}
