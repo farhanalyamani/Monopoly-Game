@@ -366,3 +366,65 @@ document.getElementById('createRoomBtn').addEventListener('click', async () => {
         btn.disabled = false;
     }
 });
+
+// 👉 2. FUNGSI PENANTANG (JOIN ROOM)
+document.getElementById('joinRoomBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('joinRoomBtn');
+    const codeInput = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+
+    // Kalo kolom kodenya kosong tapi nekat diklik
+    if (!codeInput) {
+        alert("Masukin kodenya dulu blay!");
+        return;
+    }
+
+    // Ubah teks tombol biar kelihatan mikir
+    btn.innerText = "Nyari Lapak...";
+    btn.disabled = true;
+
+    try {
+        // Nyari lapak di Firebase berdasarkan kode yang diketik
+        const tempRef = db.ref('rooms/' + codeInput);
+        const snapshot = await tempRef.once('value');
+
+        if (snapshot.exists()) {
+            const roomData = snapshot.val();
+            
+            // Cek apakah room masih nunggu musuh (belum penuh)
+            if (roomData.status === 'waiting') {
+                // Berhasil nemu lapak!
+                myRoomCode = codeInput;
+                myPlayerId = 1; // Lu jadi Player 2 (Guest)
+                gameMode = 'online';
+                players[1].isBot = false; // Matiin otak bot
+                roomRef = tempRef; // Set global roomRef
+
+                // 👉 INI KUNCI SINKRONISASINYA:
+                // Ngubah status room jadi 'playing' biar HP si Bandar (Host) otomatis masuk ke game
+                await roomRef.update({
+                    status: 'playing',
+                    'players/1/ready': true
+                });
+
+                // Tutup semua pop-up lobi di HP lu (Guest)
+                document.getElementById('onlineLobbyModal').style.display = 'none';
+                document.getElementById('mainMenu').classList.add('hide-menu');
+                
+                document.getElementById('log').innerText = `🔥 Berhasil masuk lapak! Lu main sebagai Penantang (P2). Giliran P1 jalan duluan.`;
+                if (typeof updateUI === "function") updateUI(dom);
+
+            } else {
+                alert("Waduh blay, room-nya udah penuh atau udah mulai main!");
+            }
+        } else {
+            alert("Kodenya salah blay! Lapak ga ditemuin.");
+        }
+    } catch (error) {
+        console.error("🔥 ERROR JOIN ROOM:", error);
+        alert("Gagal join room blay!\nAlasan: " + error.message);
+    }
+
+    // Balikin tombol kayak semula kalo lu gagal join
+    btn.innerText = "Join Room";
+    btn.disabled = false;
+});
