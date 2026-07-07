@@ -157,8 +157,13 @@
             <button id="cancelOnlineBtn" class="restart-btn" style="background: #e74c3c; color: white; box-shadow: none; padding: 10px 20px; font-size: 14px;">Kembali</button>
         </div>
     </div>
+
+    <!-- 👉 TOMBOL NYERAH (Ngambang di Pojok Kiri Bawah) -->
+    <button id="surrenderBtn" class="restart-btn" style="position: fixed; bottom: 30px; left: 30px; width: auto; background: #c0392b; color: white; font-size: 14px; padding: 12px 20px; z-index: 9999; box-shadow: 0 10px 20px rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer;">🏳️ Nyerah / Keluar</button>
+
     
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <!-- JS Dipisah (Urutannya Wajib Gini) -->
+        <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
         <script src="js/firebase-setup.js"></script>
         <script src="js/data.js"></script>

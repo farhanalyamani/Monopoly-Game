@@ -74,6 +74,7 @@ const dom = {
     payJailBtn: document.getElementById('payJailBtn'),
     waitJailBtn: document.getElementById('waitJailBtn'),
     assetBtn: document.getElementById('assetBtn'),
+    surrenderBtn: document.getElementById('surrenderBtn'), // 👉 Tombol Nyerah udah masuk sini
     cube1: document.getElementById('cube1'),
     cube2: document.getElementById('cube2'),
     p1MoneyText: document.getElementById('p1Money'),
@@ -602,4 +603,20 @@ window.addEventListener('beforeunload', () => {
     if (gameMode === 'online' && !gameOver && roomRef) {
         roomRef.child('surrender').set(myPlayerId);
     }
+});
+
+// 👉 FITUR BARU: TOMBOL NYERAH / KELUAR KE LOBI
+dom.surrenderBtn.addEventListener('click', () => {
+    if (gameOver) return;
+    
+    showCustomDialog(
+        "⚠️ Yakin Mau Kabur?", 
+        "Kalo lu keluar sekarang, lu auto-kalah dan balik ke Lobi.\nBeneran mau nyerah blay?", 
+        true, 
+        () => {
+            // Pas dia klik OK, halaman auto reload.
+            // Game ngeriset ke Lobi, dan musuh auto-dapet Pop Up Menang W.O!
+            window.location.reload(); 
+        }
+    );
 });
