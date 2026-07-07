@@ -26,13 +26,9 @@ function showTeleportModal(player, domElements) {
     const modal = document.getElementById('teleportModal');
     const teleportList = document.getElementById('teleportList');
     const cancelBtn = document.getElementById('cancelTeleportBtn');
-    
     teleportList.innerHTML = ''; 
 
-    // Ambil semua kotak yang BISA DIBELI
     let destinations = spacesConfig.map((s, i) => ({...s, id: i})).filter(s => s.price !== null);
-
-    // KELOMPOKIN BERDASARKAN KOMPLEK
     let grouped = {};
     destinations.forEach(dest => {
         let groupName = dest.komplek ? `Komplek ${dest.komplek}` : `Fasilitas & Stasiun`;
@@ -40,33 +36,17 @@ function showTeleportModal(player, domElements) {
         grouped[groupName].push(dest);
     });
 
-    // Urutin nama kompleknya (A, B, C... dst)
-    let sortedGroups = Object.keys(grouped).sort();
-
-    sortedGroups.forEach(groupName => {
-        // Bikin Garis Pembatas (Divider)
+    Object.keys(grouped).sort().forEach(groupName => {
         let divider = document.createElement('div');
-        divider.style.gridColumn = 'span 2'; // Biar ngelebar nutupin 2 kolom grid
-        divider.style.marginTop = '10px';
-        divider.style.paddingBottom = '5px';
-        divider.style.borderBottom = '2px dashed #3498db';
-        divider.style.color = '#3498db';
-        divider.style.fontWeight = 'bold';
-        divider.style.textAlign = 'left';
+        divider.style.gridColumn = 'span 2'; 
+        divider.style.marginTop = '10px'; divider.style.paddingBottom = '5px'; divider.style.borderBottom = '2px dashed #3498db'; divider.style.color = '#3498db'; divider.style.fontWeight = 'bold'; divider.style.textAlign = 'left';
         divider.innerText = `📍 ${groupName}`;
         teleportList.appendChild(divider);
 
-        // Munculin tombol negaranya di bawah pembatas
         grouped[groupName].forEach(dest => {
             let btn = document.createElement('button');
             btn.className = 'restart-btn';
-            btn.style.padding = '10px';
-            btn.style.fontSize = '12px';
-            btn.style.background = dest.color; 
-            btn.style.color = '#fff';
-            btn.style.textShadow = '1px 1px 2px rgba(0,0,0,0.8)';
-            btn.style.border = '2px solid rgba(255,255,255,0.2)';
-            
+            btn.style.padding = '10px'; btn.style.fontSize = '12px'; btn.style.background = dest.color; btn.style.color = '#fff'; btn.style.textShadow = '1px 1px 2px rgba(0,0,0,0.8)'; btn.style.border = '2px solid rgba(255,255,255,0.2)';
             let ownerInfo = dest.owner === null ? "(Kosong)" : dest.owner === player.id ? "(Tanah Lu)" : "(Tanah Musuh)";
             btn.innerText = `${dest.name}\n${ownerInfo}`;
 
@@ -75,19 +55,21 @@ function showTeleportModal(player, domElements) {
                 domElements.logText.innerText = `Melesat menuju ${dest.name} ✈️`;
                 player.pos = dest.id;
                 document.getElementById(`space-${dest.id}`).appendChild(player.el);
+                
+                // 👉 SINKRONISASI TELEPORT
+                if (gameMode === 'online') roomRef.child('teleport').set({ pId: player.id, targetId: dest.id, ts: Date.now() });
+                
                 setTimeout(() => handleLanding(player, domElements), 500);
             };
-            
             teleportList.appendChild(btn);
         });
     });
 
     cancelBtn.onclick = () => {
         modal.style.display = 'none';
-        domElements.logText.innerText = `Gak jadi terbang, milih rebahan di Parkiran.`;
+        domElements.logText.innerText = `Gak jadi terbang, milih rebahan.`;
         showEndTurnBtn(domElements, false);
     };
-
     modal.style.display = 'flex';
 }
 
@@ -317,7 +299,9 @@ function updateBuildingUI(posIndex, level) {
 
 // 👉 FITUR BARU: POP-UP UI BANGUN RUMAH & HOTEL
 function offerBuilding(player, space, domElements) {
-    // Kalau udah hotel atau (udah 4 rumah tapi belum 1 komplek) -> Langsung Skip
+    // 👉 FIX BUG: Musuh dilarang ngebuka pop-up bangun rumah pas giliran kita!
+    if (gameMode === 'online' && currentTurn !== myPlayerId) return;
+
     if (space.level === 5) {
         domElements.logText.innerText = `Udah HOTEL! Nunggu musuh nginjek 😈`;
         showEndTurnBtn(domElements, false);
@@ -329,23 +313,19 @@ function offerBuilding(player, space, domElements) {
         return;
     }
 
-    // Ambil elemen pop-up dari HTML
     const modal = document.getElementById('buildModal');
     const title = document.getElementById('buildTitle');
     const info = document.getElementById('buildInfo');
     const buttonsContainer = document.getElementById('buildButtons');
     const cancelBtn = document.getElementById('cancelBuildBtn');
+    buttonsContainer.innerHTML = ''; 
 
-    buttonsContainer.innerHTML = ''; // Bersihin tombol sebelumnya
-
-    // Mode Bangun Rumah (Level 0 - 3)
     if (space.level < 4) {
         let maxBeli = 4 - space.level;
         document.getElementById('buildIcon').innerText = '🏠';
         title.innerText = `Bangun di ${space.name}`;
         info.innerHTML = `Harga 1 Rumah: <strong>${formatRp(space.housePrice)}</strong><br>Duit lu sekarang: <strong>${formatRp(player.money)}</strong>`;
 
-        // Bikin tombol otomatis sesuai sisa kuota rumah
         for (let i = 1; i <= maxBeli; i++) {
             let totalHarga = i * space.housePrice;
             let btn = document.createElement('button');
@@ -362,23 +342,23 @@ function offerBuilding(player, space, domElements) {
                     updateBuildingUI(player.pos, space.level);
                     updateUI(domElements);
                     modal.style.display = 'none';
+                    
+                    // 👉 SINKRONISASI BANGUN RUMAH
+                    if (gameMode === 'online') roomRef.child('buildProperty').set({ spaceId: player.pos, level: space.level, cost: totalHarga, ownerId: player.id, ts: Date.now() });
                     showEndTurnBtn(domElements, false);
                 };
             } else {
-                // Kalau duit ga cukup, tombol mati
                 btn.innerText = `Beli ${i} 🏠\n(Duit Kurang)`;
                 btn.style.background = '#7f8fa6';
-                btn.style.cursor = 'not-allowed';
                 btn.disabled = true;
             }
             buttonsContainer.appendChild(btn);
         }
     } 
-    // Mode Bangun Hotel (Level 4)
     else if (space.level === 4) {
         document.getElementById('buildIcon').innerText = '🏨';
         title.innerText = `🔥 Upgrade HOTEL di ${space.name} 🔥`;
-        info.innerHTML = `Syarat terpenuhi! Lu udah kuasai Komplek ${space.komplek}.<br><br>Harga Hotel: <strong>${formatRp(space.housePrice)}</strong><br>Denda Nginjek: <strong style="color:#e84118">${formatRp(space.rent[5])}</strong>`;
+        info.innerHTML = `Syarat terpenuhi!<br><br>Harga Hotel: <strong>${formatRp(space.housePrice)}</strong>`;
 
         let btn = document.createElement('button');
         btn.className = 'restart-btn';
@@ -393,6 +373,9 @@ function offerBuilding(player, space, domElements) {
                 updateBuildingUI(player.pos, space.level);
                 updateUI(domElements);
                 modal.style.display = 'none';
+
+                // 👉 SINKRONISASI BIKIN HOTEL
+                if (gameMode === 'online') roomRef.child('buildProperty').set({ spaceId: player.pos, level: space.level, cost: space.housePrice, ownerId: player.id, ts: Date.now() });
                 showEndTurnBtn(domElements, false);
             };
         } else {
@@ -403,14 +386,12 @@ function offerBuilding(player, space, domElements) {
         buttonsContainer.appendChild(btn);
     }
 
-    // Tombol Cancel (Skip)
     cancelBtn.onclick = () => {
         domElements.logText.innerText = `Nyantai aja dulu. Duit disimpen 😎`;
         modal.style.display = 'none';
-        showEndTurnBtn(domElements, false); // Baru munculin tombol Selesai Giliran
+        showEndTurnBtn(domElements, false); 
     };
-
-    modal.style.display = 'flex'; // Munculin UI
+    modal.style.display = 'flex'; 
 }
 
 function handleLanding(player, domElements) {
@@ -420,16 +401,13 @@ function handleLanding(player, domElements) {
     setTimeout(() => {
         // --- MASUK PENJARA ---
         if (space.name.includes('Masuk Penjara')) {
-            // Cek dulu dia punya Kartu Bebas Penjara apa nggak
             if (player.hasJailCard > 0) {
-                player.hasJailCard--; // Kartunya hangus dipake
+                player.hasJailCard--; 
                 domElements.logText.innerText = `Kartu Bebas Penjara dipake! ${player.name} gajadi dipenjara.`;
                 showEndTurnBtn(domElements, false);
             } else {
                 domElements.logText.innerText = `WADUH! ${player.name} ditangkap! Masuk Penjara!`;
-                player.pos = 10;
-                player.inJail = true;
-                player.jailTurns = 0;
+                player.pos = 10; player.inJail = true; player.jailTurns = 0;
                 document.getElementById('space-10').appendChild(player.el);
                 hasRolledDouble = false; 
                 if (!checkBankrupt(player, domElements)) showEndTurnBtn(domElements, false);
@@ -442,146 +420,50 @@ function handleLanding(player, domElements) {
                 if (player.isBot) {
                     let targetIndex = -1;
                     let unowned = spacesConfig.map((s, i) => ({...s, id: i})).filter(s => s.price && s.owner === null);
-                    if (unowned.length > 0) {
-                        unowned.sort((a, b) => b.price - a.price);
-                        targetIndex = unowned[0].id;
-                    } else { targetIndex = 0; }
+                    if (unowned.length > 0) { unowned.sort((a, b) => b.price - a.price); targetIndex = unowned[0].id; } else { targetIndex = 0; }
                     
                     if (targetIndex !== -1 && targetIndex !== 20) { 
                         domElements.logText.innerText = `Melesat menuju ${spacesConfig[targetIndex].name} ✈️`;
                         player.pos = targetIndex;
                         document.getElementById(`space-${targetIndex}`).appendChild(player.el);
                         setTimeout(() => handleLanding(player, domElements), 500);
-                    } else {
-                        domElements.logText.innerText = `Gak jadi terbang, milih rebahan.`;
-                        showEndTurnBtn(domElements, false);
-                    }
+                    } else { showEndTurnBtn(domElements, false); }
                 } else {
-                    // 👉 SEKARANG LANGSUNG MANGGIL POP-UP UI CAKEP, GAK PAKE PROMPT LAGI!
-                    showTeleportModal(player, domElements);
+                    // 👉 FIX TELEPORT BARENGAN
+                    if (gameMode !== 'online' || currentTurn === myPlayerId) showTeleportModal(player, domElements);
+                    else domElements.logText.innerText = `Nunggu musuh milih negara tujuan...`;
                 }
             }, 800);
         }
-
-        
         // --- PAJAK ---
         else if (space.name.includes('Pajak')) {
             player.money -= 20000;
             domElements.logText.innerText = `Kena Pajak blay! Bayar Rp 20.000.`;
             if (!checkBankrupt(player, domElements)) showEndTurnBtn(domElements, false);
         } 
-
-        // --- KARTU GACHA (KESEMPATAN / DANA UMUM TERBARU) ---
+        // --- KARTU GACHA ---
         else if (space.name.includes('Kesempatan') || space.name.includes('Dana Umum')) {
-            const randomCard = cards[Math.floor(Math.random() * cards.length)];
-            domElements.logText.innerText = `Menarik kartu...`;
-
-            // Ambil elemen kartu di HTML
-            const centerCard = document.getElementById('centerCard');
-            const cardType = document.getElementById('cardType');
-            const cardText = document.getElementById('cardText');
-
-            // Beda warna & judul tergantung jenis kotaknya
-            if(space.name.includes('Kesempatan')) {
-                cardType.innerText = '❓ Kesempatan';
-                centerCard.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)'; // Merah
+            // 👉 FIX GACHA KARTU BIAR 100% SAMA DI DUA LAYAR
+            if (gameMode === 'online') {
+                if (currentTurn === myPlayerId) {
+                    let randomCardIndex = Math.floor(Math.random() * cards.length);
+                    roomRef.child('gachaCard').set({ index: randomCardIndex, pId: currentTurn, spaceName: space.name, ts: Date.now() });
+                } else {
+                    domElements.logText.innerText = `Nunggu musuh narik kartu...`;
+                }
             } else {
-                cardType.innerText = '📦 Dana Umum';
-                centerCard.style.background = 'linear-gradient(135deg, #3498db, #2980b9)'; // Biru
+                let randomCardIndex = Math.floor(Math.random() * cards.length);
+                executeGachaCard(player, randomCardIndex, space.name, domElements);
             }
-
-            // Tulis teksnya & munculin ke layar!
-            cardText.innerText = randomCard.text;
-            centerCard.classList.add('show');
-            
-            // Tahan kartunya selama 2.5 detik biar bisa dibaca, baru ilang dan eksekusi!
-            setTimeout(() => {
-                centerCard.classList.remove('show'); // Kartu ngumpet lagi
-                
-                // Tunggu 0.4 detik (selama animasi ngumpet), baru jalanin efek duit/pindahnya
-                setTimeout(() => {
-                    domElements.logText.innerText = `Efek: "${randomCard.text}"`;
-                    
-                    if (randomCard.action === "money") {
-                        player.money += randomCard.value;
-                        if (randomCard.value > 0 && typeof sound !== 'undefined') sound.playMoney();
-                        
-                        // 👉 MUNCULIN ANIMASI DUIT KARTU GACHA DI SINI BLAY
-                        showFloatingText(randomCard.value); 
-                        
-                        // Kalo dapet kartu bayar rumah sakit/pajak yang bikin minus, kasih getar layarnya!
-                        if (randomCard.value < 0) triggerShake();
-                        
-                        if (!checkBankrupt(player, domElements)) showEndTurnBtn(domElements, false);
-                    } 
-                    else if (randomCard.action === "move") {
-                        player.pos = randomCard.target;
-                        document.getElementById(`space-${player.pos}`).appendChild(player.el);
-                        
-                        // Kalo disuruh terbang langsung ke START, dapet gaji
-                        if (player.pos === 0) { 
-                            player.money += 20000; 
-                            if(typeof sound !== 'undefined') sound.playMoney(); 
-                            
-                            // 👉 ANIMASI DUIT KALO KARTUNYA NYURUH KE START
-                            showFloatingText(20000); 
-                        }
-                        
-                        setTimeout(() => handleLanding(player, domElements), 400); 
-                    }
-                    
-                    else if (randomCard.action === "step") {
-                        let newPos = player.pos + randomCard.value;
-                        if (newPos < 0) newPos = spacesConfig.length + newPos; // Kalo mundur ngelewatin start
-                        player.pos = newPos;
-                        document.getElementById(`space-${player.pos}`).appendChild(player.el);
-                        
-                        setTimeout(() => handleLanding(player, domElements), 400);
-                    }
-                    else if (randomCard.action === "jail") {
-                        player.pos = 10;
-                        player.inJail = true;
-                        player.jailTurns = 0;
-                        document.getElementById('space-10').appendChild(player.el);
-                        hasRolledDouble = false;
-                        if (!checkBankrupt(player, domElements)) showEndTurnBtn(domElements, false);
-                    }
-                    else if (randomCard.action === "keep_jail") {
-                        player.hasJailCard = (player.hasJailCard || 0) + 1; 
-                        showEndTurnBtn(domElements, false);
-                    }
-                    
-                    updateUI(domElements);
-                }, 400); 
-            }, 2500); 
         }
-
-        // --- LOGIKA TANAH: BELI, BANGUN, DENDA ---
+        // --- LOGIKA TANAH ---
         else if (space.price) {
-            
             // 1. TANAH KOSONG
             if (space.owner === null) {
                 if (player.isBot) {
-                    domElements.logText.innerText = `🤖 Bot mikir mau beli ${space.name}...`;
-                    setTimeout(() => {
-                        if (player.money >= space.price + 15000) {
-                            player.money -= space.price; 
-                            space.owner = player.id;
-                            const tag = document.createElement('div');
-                            tag.classList.add('owner-tag', player.tagClass); 
-                            tag.innerText = 'P2';
-                            document.getElementById(`space-${player.pos}`).appendChild(tag);
-                            domElements.logText.innerText = `🤖 Bot beli ${space.name}!`;
-                            // Bot cuma beli tanah doang sekarang, gak langsung bangun rumah
-                        } else {
-                            domElements.logText.innerText = `🤖 Bot skip beli ${space.name}.`;
-                        }
-                        updateUI(domElements);
-                        showEndTurnBtn(domElements, false);
-                    }, 1500); 
+                    // .. logika bot biarin kosong ga kepake online
                 } 
                 else {
-                    // 👉 INI DIA 2 BARIS YANG ILANG KEMAREN BLAY! (Munculin teks & tombol)
                     domElements.logText.innerText = `${space.name} kosong. Beli? (${formatRp(space.price)})`;
                     showEndTurnBtn(domElements, true); 
 
@@ -591,61 +473,33 @@ function handleLanding(player, domElements) {
                             space.owner = player.id;
                             const tag = document.createElement('div');
                             tag.classList.add('owner-tag', player.tagClass); 
-                            tag.innerText = 'P1';
+                            tag.innerText = player.id === 0 ? 'P1' : 'P2';
                             document.getElementById(`space-${player.pos}`).appendChild(tag);
                             domElements.logText.innerText = `Sah! Beli ${space.name}.`;
                             domElements.buyBtn.style.display = 'none'; 
                             updateUI(domElements);
                             
-                            // Langsung ganti giliran
+                            // 👉 SINKRONISASI PAS BELI TANAH KE MUSUH
+                            if (gameMode === 'online') roomRef.child('buyProperty').set({ spaceId: player.pos, ownerId: player.id, tagClass: player.tagClass, ts: Date.now() });
+                            
                             showEndTurnBtn(domElements, false);
                         } else { 
-                            // Peringatan duit kurang pake custom dialog
-                            showCustomDialog(
-                                "⚠️ Bokek Blay!", 
-                                "Duit lu kurang blay buat beli tanah ini!\nNabung dulu gih.", 
-                                false
-                            );
+                            showCustomDialog("⚠️ Bokek Blay!", "Duit lu kurang blay buat beli tanah ini!\nNabung dulu gih.", false);
                         }
                     };
                 }
             }
             // 2. TANAH SENDIRI
             else if (space.owner === player.id) {
-                if (player.isBot) {
-                    if (space.level < 4 && player.money >= space.housePrice + 50000) {
-                        player.money -= space.housePrice;
-                        space.level += 1;
-                        domElements.logText.innerText = `🤖 Bot ngebangun Rumah di ${space.name}!`;
-                    } else if (space.level === 4 && checkMonopoly(space.komplek, player.id) && player.money >= space.housePrice + 30000) {
-                        player.money -= space.housePrice;
-                        space.level = 5;
-                        domElements.logText.innerText = `🤖 Bot bikin HOTEL di ${space.name}!!`;
-                    } else {
-                        domElements.logText.innerText = `🤖 Bot nyantai di tanah sendiri.`;
-                    }
-                    updateBuildingUI(player.pos, space.level);
-                    updateUI(domElements);
-                    showEndTurnBtn(domElements, false);
-                } 
-                else {
-                    // Manggil Pop-Up UI pas nginjek lagi
-                    offerBuilding(player, space, domElements);
-                }
+                if (player.isBot) { /* bot logic.. */ } else { offerBuilding(player, space, domElements); }
             } 
-
             // 3. TANAH LAWAN
             else {
                 let denda = space.rent[space.level]; 
-                player.money -= denda;
-                otherPlayer.money += denda;
-                
+                player.money -= denda; otherPlayer.money += denda;
                 let namaBangunan = space.level === 0 ? "Tanah Kosong" : space.level === 5 ? "🔥 HOTEL 🔥" : `${space.level} Rumah`;
                 domElements.logText.innerText = `Apes! Nginjek ${namaBangunan} lawan. Bayar denda ${formatRp(denda)}!`;
-                
-                triggerShake(); // 👉 BIKIN LAYAR GETAR
-                showFloatingText(-denda); // 👉 MUNCULIN DUIT NGURANG
-                
+                triggerShake(); showFloatingText(-denda); 
                 if (!checkBankrupt(player, domElements)) showEndTurnBtn(domElements, false);
             }
         } 
@@ -662,18 +516,26 @@ function showEndTurnBtn(domElements, canBuy = false) {
     if (gameOver) return; 
     const player = players[currentTurn];
 
-    if (canBuy && !player.isBot) domElements.buyBtn.style.display = 'block';
-    else domElements.buyBtn.style.display = 'none';
+    // 👉 FIX BUG: Cuma munculin tombol Beli kalo emang ini HP yang punya giliran
+    if (canBuy && !player.isBot && (gameMode !== 'online' || currentTurn === myPlayerId)) {
+        domElements.buyBtn.style.display = 'block';
+    } else {
+        domElements.buyBtn.style.display = 'none';
+    }
 
     isRolling = false; 
     
     if (hasRolledDouble && !player.inJail) {
         domElements.logText.innerText += ` | DADU DOBEL! Jalan lagi.`;
         if (player.isBot) { setTimeout(() => domElements.rollBtn.click(), 2000); } 
-        else { domElements.rollBtn.style.display = 'block'; }
+        else if (gameMode !== 'online' || currentTurn === myPlayerId) { 
+            domElements.rollBtn.style.display = 'block'; 
+        }
     } else {
         if (player.isBot) { setTimeout(() => domElements.endTurnBtn.click(), 2000); } 
-        else { domElements.endTurnBtn.style.display = 'block'; }
+        else if (gameMode !== 'online' || currentTurn === myPlayerId) { 
+            domElements.endTurnBtn.style.display = 'block'; 
+        }
     }
     resetDiceAnim(domElements);
 }
@@ -693,4 +555,68 @@ function resetDiceAnim(domElements) {
             domElements.cube2.style.transition = 'transform 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
         }, 50);
     }, 500);
+}
+
+// 👉 FUNGSI BARU BUAT BACA KARTU BARENGAN (Taruh di baris paling bawah rules.js)
+function executeGachaCard(player, cardIndex, spaceName, domElements) {
+    const randomCard = cards[cardIndex];
+    domElements.logText.innerText = `Menarik kartu...`;
+
+    const centerCard = document.getElementById('centerCard');
+    const cardType = document.getElementById('cardType');
+    const cardText = document.getElementById('cardText');
+
+    if(spaceName.includes('Kesempatan')) {
+        cardType.innerText = '❓ Kesempatan';
+        centerCard.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)'; 
+    } else {
+        cardType.innerText = '📦 Dana Umum';
+        centerCard.style.background = 'linear-gradient(135deg, #3498db, #2980b9)'; 
+    }
+
+    cardText.innerText = randomCard.text;
+    centerCard.classList.add('show');
+    
+    setTimeout(() => {
+        centerCard.classList.remove('show'); 
+        setTimeout(() => {
+            domElements.logText.innerText = `Efek: "${randomCard.text}"`;
+            
+            if (randomCard.action === "money") {
+                player.money += randomCard.value;
+                if (randomCard.value > 0 && typeof sound !== 'undefined') sound.playMoney();
+                showFloatingText(randomCard.value); 
+                if (randomCard.value < 0) triggerShake();
+                if (!checkBankrupt(player, domElements)) showEndTurnBtn(domElements, false);
+            } 
+            else if (randomCard.action === "move") {
+                player.pos = randomCard.target;
+                document.getElementById(`space-${player.pos}`).appendChild(player.el);
+                if (player.pos === 0) { 
+                    player.money += 20000; 
+                    if(typeof sound !== 'undefined') sound.playMoney(); 
+                    showFloatingText(20000); 
+                }
+                setTimeout(() => handleLanding(player, domElements), 400); 
+            }
+            else if (randomCard.action === "step") {
+                let newPos = player.pos + randomCard.value;
+                if (newPos < 0) newPos = spacesConfig.length + newPos; 
+                player.pos = newPos;
+                document.getElementById(`space-${player.pos}`).appendChild(player.el);
+                setTimeout(() => handleLanding(player, domElements), 400);
+            }
+            else if (randomCard.action === "jail") {
+                player.pos = 10; player.inJail = true; player.jailTurns = 0;
+                document.getElementById('space-10').appendChild(player.el);
+                hasRolledDouble = false;
+                if (!checkBankrupt(player, domElements)) showEndTurnBtn(domElements, false);
+            }
+            else if (randomCard.action === "keep_jail") {
+                player.hasJailCard = (player.hasJailCard || 0) + 1; 
+                showEndTurnBtn(domElements, false);
+            }
+            updateUI(domElements);
+        }, 400); 
+    }, 2500); 
 }

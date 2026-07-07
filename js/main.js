@@ -452,17 +452,17 @@ document.getElementById('joinRoomBtn').addEventListener('click', async () => {
 });
 
 // ==========================================
-// MESIN CCTV SINKRONISASI ONLINE
+// MESIN CCTV SINKRONISASI ONLINE (UPGRADE DEWA)
 // ==========================================
+let sessionStartTime = Date.now(); // Biar ga ngebaca riwayat lama pas baru join
+
 function setupOnlineCCTV() {
-    // 1. Umpetin tombol dadu di awal kalo bukan giliran kita
     if (currentTurn !== myPlayerId) dom.rollBtn.style.display = 'none';
 
-    // 2. Pantau kalo musuh ngocok dadu
+    // 1. Pantau kalo musuh ngocok dadu
     roomRef.child('lastRoll').on('value', (snapshot) => {
         const data = snapshot.val();
-        // Kalo ada data dan yang ngocok itu musuh (bukan kita)
-        if (data && data.pId !== myPlayerId) {
+        if (data && data.pId !== myPlayerId && data.timestamp > sessionStartTime) {
             isRolling = true;
             dom.rollBtn.style.display = 'none';
             dom.buyBtn.style.display = 'none';
@@ -474,7 +474,6 @@ function setupOnlineCCTV() {
             hasRolledDouble = (data.d1 === data.d2);
             const totalRoll = data.d1 + data.d2;
 
-            // Animasikan dadu di layar lu pake angka dari musuh
             dom.cube1.style.transform = `translateZ(-25px) rotateX(${diceRotations[data.d1].x + 1080}deg) rotateY(${diceRotations[data.d1].y + 1080}deg)`;
             dom.cube2.style.transform = `translateZ(-25px) rotateX(${diceRotations[data.d2].x + 1080}deg) rotateY(${diceRotations[data.d2].y + 1080}deg)`;
 
@@ -482,7 +481,7 @@ function setupOnlineCCTV() {
         }
     });
 
-    // 3. Pantau kalo musuh selesai giliran (End Turn)
+    // 2. Pantau kalo musuh selesai giliran
     roomRef.child('turn').on('value', (snapshot) => {
         const newTurn = snapshot.val();
         if (newTurn !== null && newTurn !== currentTurn) {
@@ -493,9 +492,67 @@ function setupOnlineCCTV() {
             dom.turnText.className = currentTurn === 0 ? 'p1-color' : 'p2-color';
             dom.logText.innerText = nextPlayer.inJail ? `Giliran ${nextPlayer.name} (Lagi di Penjara).` : `Giliran ${nextPlayer.name}.`;
 
-            // Kalo gilirannya pindah ke kita, baru munculin tombol dadunya
             if (currentTurn === myPlayerId) dom.rollBtn.style.display = 'block';
             else dom.rollBtn.style.display = 'none';
+        }
+    });
+
+    // 3. Pantau Tarikan Kartu Gacha (Biar Barengan Animasi)
+    roomRef.child('gachaCard').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.ts > sessionStartTime) {
+            // Dieksekusi di kedua layar secara bersamaan!
+            executeGachaCard(players[data.pId], data.index, data.spaceName, dom);
+        }
+    });
+
+    // 4. Pantau Musuh Beli Tanah
+    roomRef.child('buyProperty').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.ownerId !== myPlayerId && data.ts > sessionStartTime) {
+            const space = spacesConfig[data.spaceId];
+            const enemy = players[data.ownerId];
+            
+            enemy.money -= space.price; 
+            space.owner = data.ownerId;
+            
+            const tag = document.createElement('div');
+            tag.classList.add('owner-tag', data.tagClass); 
+            tag.innerText = data.ownerId === 0 ? 'P1' : 'P2';
+            document.getElementById(`space-${data.spaceId}`).appendChild(tag);
+            
+            dom.logText.innerText = `Sah! Musuh Beli ${space.name}.`;
+            if (typeof updateUI === "function") updateUI(dom);
+        }
+    });
+
+    // 5. Pantau Musuh Bangun Rumah/Hotel
+    roomRef.child('buildProperty').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.ownerId !== myPlayerId && data.ts > sessionStartTime) {
+            const space = spacesConfig[data.spaceId];
+            const enemy = players[data.ownerId];
+            
+            enemy.money -= data.cost; 
+            space.level = data.level;
+            
+            if (typeof updateBuildingUI === "function") updateBuildingUI(data.spaceId, data.level);
+            
+            dom.logText.innerText = data.level === 5 ? `🔥 Musuh bikin HOTEL di ${space.name}!` : `Musuh bangun fasilitas di ${space.name}.`;
+            if (typeof updateUI === "function") updateUI(dom);
+        }
+    });
+
+    // 6. Pantau Penerbangan VIP (Bebas Parkir)
+    roomRef.child('teleport').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.pId !== myPlayerId && data.ts > sessionStartTime) {
+             const enemy = players[data.pId];
+             const dest = spacesConfig[data.targetId];
+             dom.logText.innerText = `Melesat menuju ${dest.name} ✈️`;
+             enemy.pos = data.targetId;
+             document.getElementById(`space-${data.targetId}`).appendChild(enemy.el);
+             setTimeout(() => handleLanding(enemy, dom), 500);
         }
     });
 }
