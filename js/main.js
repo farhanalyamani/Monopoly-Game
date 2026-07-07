@@ -168,6 +168,13 @@ function startMoving(player, totalRoll) {
 // Event Kocok Dadu
 dom.rollBtn.addEventListener('click', () => {
     if (isRolling || gameOver) return; 
+
+    // 👉 KUNCI ONLINE: Kalo bukan giliran lu, tombol dilarang dipencet
+    if (gameMode === 'online' && currentTurn !== myPlayerId) {
+        showCustomDialog("⚠️ Sabar Blay!", "Belum giliran lu ngocok dadu!", false);
+        return;
+    }
+
     isRolling = true; 
     dom.rollBtn.style.display = 'none';
     dom.buyBtn.style.display = 'none';
@@ -175,13 +182,19 @@ dom.rollBtn.addEventListener('click', () => {
     const player = players[currentTurn];
     dom.logText.innerText = `${player.name} ngocok dadu...`;
 
-    // Bunyi dadu
-    sound.playDice();
+    if(typeof sound !== 'undefined') sound.playDice();
 
     const d1 = Math.floor(Math.random() * 6) + 1;
     const d2 = Math.floor(Math.random() * 6) + 1;
     hasRolledDouble = (d1 === d2);
     const totalRoll = d1 + d2;
+
+    // 👉 SINKRONISASI: Lapor ke Firebase lu dapet angka berapa
+    if (gameMode === 'online') {
+        roomRef.child('lastRoll').set({
+            pId: myPlayerId, d1: d1, d2: d2, timestamp: Date.now()
+        });
+    }
 
     dom.cube1.style.transform = `translateZ(-25px) rotateX(${diceRotations[d1].x + 1080}deg) rotateY(${diceRotations[d1].y + 1080}deg)`;
     dom.cube2.style.transform = `translateZ(-25px) rotateX(${diceRotations[d2].x + 1080}deg) rotateY(${diceRotations[d2].y + 1080}deg)`;
@@ -252,26 +265,31 @@ dom.rollBtn.addEventListener('click', () => {
 // Event Ganti Pemain
 dom.endTurnBtn.addEventListener('click', () => {
     if (gameOver) return;
+
+    // 👉 KUNCI ONLINE: Biar lu ga bisa iseng nyolong turn musuh
+    if (gameMode === 'online' && currentTurn !== myPlayerId) return;
+
     dom.endTurnBtn.style.display = 'none';
     dom.buyBtn.style.display = 'none';
     currentTurn = currentTurn === 0 ? 1 : 0; 
     
+    // 👉 SINKRONISASI: Laporin ganti giliran ke HP musuh
+    if (gameMode === 'online') {
+        roomRef.child('turn').set(currentTurn);
+    }
+
     const nextPlayer = players[currentTurn];
     dom.turnText.innerText = nextPlayer.name;
     dom.turnText.className = currentTurn === 0 ? 'p1-color' : 'p2-color';
-    
-    if (nextPlayer.inJail) {
-        dom.logText.innerText = `Giliran ${nextPlayer.name} (Lagi di Penjara).`;
-    } else {
-        dom.logText.innerText = `Giliran ${nextPlayer.name}.`;
-    }
+    dom.logText.innerText = nextPlayer.inJail ? `Giliran ${nextPlayer.name} (Lagi di Penjara).` : `Giliran ${nextPlayer.name}.`;
     
     if (nextPlayer.isBot) {
-        setTimeout(() => {
-            if (!gameOver) dom.rollBtn.click();
-        }, 1500); 
+        setTimeout(() => { if (!gameOver) dom.rollBtn.click(); }, 1500); 
     } else {
-        dom.rollBtn.style.display = 'block';
+        // Cuma munculin tombol dadu kalo ini main lokal, atau kalo ini giliran lu di mode online
+        if (gameMode !== 'online' || currentTurn === myPlayerId) {
+            dom.rollBtn.style.display = 'block';
+        }
     }
 });
 
@@ -355,6 +373,8 @@ document.getElementById('createRoomBtn').addEventListener('click', async () => {
                 document.getElementById('mainMenu').classList.add('hide-menu');
                 document.getElementById('log').innerText = `🔥 Musuh berhasil masuk! Lu main sebagai Bandar (P1).`;
                 if (typeof updateUI === "function") updateUI(dom);
+                // 👉 PANGGIL MESIN CCTV DISINI
+                setupOnlineCCTV();
             }
         });
 
@@ -412,6 +432,8 @@ document.getElementById('joinRoomBtn').addEventListener('click', async () => {
                 
                 document.getElementById('log').innerText = `🔥 Berhasil masuk lapak! Lu main sebagai Penantang (P2). Giliran P1 jalan duluan.`;
                 if (typeof updateUI === "function") updateUI(dom);
+                // 👉 PANGGIL MESIN CCTV DISINI
+                 setupOnlineCCTV();
 
             } else {
                 alert("Waduh blay, room-nya udah penuh atau udah mulai main!");
@@ -428,3 +450,52 @@ document.getElementById('joinRoomBtn').addEventListener('click', async () => {
     btn.innerText = "Join Room";
     btn.disabled = false;
 });
+
+// ==========================================
+// MESIN CCTV SINKRONISASI ONLINE
+// ==========================================
+function setupOnlineCCTV() {
+    // 1. Umpetin tombol dadu di awal kalo bukan giliran kita
+    if (currentTurn !== myPlayerId) dom.rollBtn.style.display = 'none';
+
+    // 2. Pantau kalo musuh ngocok dadu
+    roomRef.child('lastRoll').on('value', (snapshot) => {
+        const data = snapshot.val();
+        // Kalo ada data dan yang ngocok itu musuh (bukan kita)
+        if (data && data.pId !== myPlayerId) {
+            isRolling = true;
+            dom.rollBtn.style.display = 'none';
+            dom.buyBtn.style.display = 'none';
+            
+            const enemyPlayer = players[data.pId];
+            dom.logText.innerText = `Musuh ngocok dadu...`;
+            if(typeof sound !== 'undefined') sound.playDice();
+
+            hasRolledDouble = (data.d1 === data.d2);
+            const totalRoll = data.d1 + data.d2;
+
+            // Animasikan dadu di layar lu pake angka dari musuh
+            dom.cube1.style.transform = `translateZ(-25px) rotateX(${diceRotations[data.d1].x + 1080}deg) rotateY(${diceRotations[data.d1].y + 1080}deg)`;
+            dom.cube2.style.transform = `translateZ(-25px) rotateX(${diceRotations[data.d2].x + 1080}deg) rotateY(${diceRotations[data.d2].y + 1080}deg)`;
+
+            setTimeout(() => { startMoving(enemyPlayer, totalRoll); }, 1500);
+        }
+    });
+
+    // 3. Pantau kalo musuh selesai giliran (End Turn)
+    roomRef.child('turn').on('value', (snapshot) => {
+        const newTurn = snapshot.val();
+        if (newTurn !== null && newTurn !== currentTurn) {
+            currentTurn = newTurn;
+            const nextPlayer = players[currentTurn];
+            
+            dom.turnText.innerText = nextPlayer.name;
+            dom.turnText.className = currentTurn === 0 ? 'p1-color' : 'p2-color';
+            dom.logText.innerText = nextPlayer.inJail ? `Giliran ${nextPlayer.name} (Lagi di Penjara).` : `Giliran ${nextPlayer.name}.`;
+
+            // Kalo gilirannya pindah ke kita, baru munculin tombol dadunya
+            if (currentTurn === myPlayerId) dom.rollBtn.style.display = 'block';
+            else dom.rollBtn.style.display = 'none';
+        }
+    });
+}
