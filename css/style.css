@@ -486,59 +486,72 @@ body {
    MODE HP (MOBILE RESPONSIVE TINGKAT DEWA)
    ========================================= */
 @media screen and (max-width: 850px) {
-    .game-container {
-        flex-direction: column-reverse; 
-        padding: 5px;
-        gap: 10px;
-    }
-    .board {
-        grid-template-columns: repeat(11, 8.8vw) !important;
-        grid-template-rows: repeat(11, 8.8vw) !important;
-        padding: 2px;
-        gap: 1px;
-        width: 100%;
+    /* 1. Paksa Body nyusun elemen ke bawah, bukan nyamping */
+    body {
+        flex-direction: column;
+        justify-content: flex-start;
+        padding: 10px;
         box-sizing: border-box;
     }
 
-    /* 👉 OBAT ANTI SUMPEK (Browser nolak font di bawah 9px) */
-    .price-tag { display: none !important; } /* Sembunyiin harga di papan */
-    .color-bar { font-size: 0 !important; height: 18% !important; } /* Sembunyiin teks KMPLK */
+    .game-container {
+        flex-direction: column-reverse; 
+        padding: 0;
+        gap: 15px;
+        width: 100%;
+        box-shadow: none; /* Ilangin shadow luar biar ga makan tempat di HP */
+    }
+
+    /* 2. Papan pake '1fr' biar otomatis ngebagi 11 kotak presisi 100% layar */
+    .board {
+        grid-template-columns: repeat(11, 1fr) !important;
+        grid-template-rows: repeat(11, 1fr) !important;
+        padding: 2px;
+        gap: 1px;
+        width: 100%;
+        aspect-ratio: 1 / 1; /* Pastiin papannya tetep kotak sempurna (persegi) */
+        box-sizing: border-box;
+    }
+
+    /* 3. Obat Anti Sumpek Teks */
+    .price-tag { display: none !important; } 
+    .color-bar { font-size: 0 !important; height: 18% !important; } 
     
     .space-name { 
         font-size: 9px !important; 
-        transform: scale(0.65); /* Paksa ngecil pake trik zoom out */
-        width: 150%; /* Kompensasi lebar biar ga kepotong pas di-scale */
+        transform: scale(0.65); 
+        width: 150%; 
         margin-top: 2px;
         line-height: 1.1;
     }
     
-    /* Sudut papan (Start, Penjara, dll) */
     .start, .space:nth-child(11), .space:nth-child(21), .space:nth-child(31) {
         font-size: 9px !important;
         transform: scale(0.7);
     }
 
-    /* Bagian Tengah */
+    /* 4. Bagian Tengah Papan */
     .center-board { font-size: 1.2rem !important; }
     .deck-placeholder { width: 50px; height: 30px; border-width: 2px; font-size: 5px; }
     .deck-placeholder span { font-size: 10px; }
     
-    /* Pion & Emblem Kepemilikan (Dikecilin lagi) */
+    /* 5. Pion & Emblem */
     .player-pin { width: 8px !important; height: 14px !important; bottom: 8px !important; }
     .pin-1 { left: 10% !important; }
     .pin-2 { right: 10% !important; }
     .owner-tag { transform: translate(-50%, -50%) scale(0.6) !important; }
     .building-indicator { transform: scale(0.7); margin-top: 0 !important; }
     
-    /* Panel Dadu */
-    .panel { width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 10px;}
+    /* 6. Panel Dadu */
+    .panel { width: 100%; box-sizing: border-box; padding: 15px; margin-bottom: 0; }
 
-    /* 👉 Tombol Nyerah Berhenti Ngambang (Turun ke dasar layar) */
+    /* 7. 👉 Tombol Nyerah Fix (Full Width di paling bawah) */
     #surrenderBtn { 
         position: relative !important; 
-        bottom: auto !important; left: auto !important;
-        width: 95% !important; 
+        bottom: auto !important; 
+        left: auto !important;
+        width: 100% !important; 
         display: block;
-        margin: 0 auto 30px auto !important; 
+        margin: 10px 0 20px 0 !important; 
     }
 }
